@@ -1,0 +1,12 @@
+dist
+node_modules
+coverage
+playwright-report
+test-results
+package-lock.json
+*.tsbuildinfo
+docs
+.cursor
+public
+*.svg
+*.png

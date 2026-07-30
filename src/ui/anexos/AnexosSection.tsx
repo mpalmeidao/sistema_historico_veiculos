@@ -1,0 +1,252 @@
+import { useEffect, useRef, useState } from 'react'
+import { IonAlert, IonButton, IonItem, IonLabel, IonList, IonNote, IonText } from '@ionic/react'
+import type { AnexoMeta, PreparedAnexo } from '../../domain'
+import { MIME_PDF } from '../../domain'
+import { strings } from '../../shared/i18n'
+import type { UseAnexosResult } from '../hooks/useAnexos'
+
+export interface AnexosSectionProps {
+  anexos: AnexoMeta[]
+  processing: boolean
+  errorMessage: string | null
+  attachFile: UseAnexosResult['attachFile']
+  confirmPreparedAnexo: UseAnexosResult['confirmPreparedAnexo']
+  loadAnexoBytes: UseAnexosResult['loadAnexoBytes']
+  removeAnexo: UseAnexosResult['removeAnexo']
+}
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+export function AnexosSection({
+  anexos,
+  processing,
+  errorMessage,
+  attachFile,
+  confirmPreparedAnexo,
+  loadAnexoBytes,
+  removeAnexo,
+}: AnexosSectionProps) {
+  const photoInputRef = useRef<HTMLInputElement>(null)
+  const pdfInputRef = useRef<HTMLInputElement>(null)
+  const [pendingDelete, setPendingDelete] = useState<AnexoMeta | null>(null)
+  const [pendingPdf, setPendingPdf] = useState<PreparedAnexo | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewMime, setPreviewMime] = useState<string | null>(null)
+  const previewUrlRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current)
+        previewUrlRef.current = null
+      }
+    }
+  }, [])
+
+  function clearPreview() {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current)
+      previewUrlRef.current = null
+    }
+    setPreviewUrl(null)
+    setPreviewMime(null)
+  }
+
+  async function handleFiles(fileList: FileList | null) {
+    const file = fileList?.[0]
+    if (!file) return
+    if (photoInputRef.current) photoInputRef.current.value = ''
+    if (pdfInputRef.current) pdfInputRef.current.value = ''
+
+    const result = await attachFile(file)
+    if (result.status === 'needs-pdf-confirm') {
+      setPendingPdf(result.prepared)
+    }
+  }
+
+  async function handleView(meta: AnexoMeta) {
+    const full = await loadAnexoBytes(meta.id)
+    if (!full) return
+    clearPreview()
+    const copy = new Uint8Array(full.bytes)
+    const blob = new Blob([copy.buffer], { type: full.mimeType })
+    const url = URL.createObjectURL(blob)
+    previewUrlRef.current = url
+    setPreviewUrl(url)
+    setPreviewMime(full.mimeType)
+  }
+
+  return (
+    <section data-testid="anexos-section" style={{ marginTop: '1.5rem' }}>
+      <h3 style={{ marginBottom: '0.5rem' }}>{strings.anexos.title}</h3>
+
+      {errorMessage && (
+        <IonText color="danger">
+          <p data-testid="anexos-error">{errorMessage}</p>
+        </IonText>
+      )}
+      {processing && <IonNote data-testid="anexos-processing">{strings.anexos.processing}</IonNote>}
+
+      <div
+        style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '0.75rem' }}
+      >
+        <IonButton
+          data-testid="anexo-add-photo"
+          size="small"
+          disabled={processing}
+          onClick={() => photoInputRef.current?.click()}
+        >
+          {strings.anexos.addPhoto}
+        </IonButton>
+        <IonButton
+          data-testid="anexo-add-pdf"
+          size="small"
+          fill="outline"
+          disabled={processing}
+          onClick={() => pdfInputRef.current?.click()}
+        >
+          {strings.anexos.addPdf}
+        </IonButton>
+      </div>
+
+      <input
+        ref={photoInputRef}
+        data-testid="anexo-photo-input"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        hidden
+        onChange={(event) => {
+          void handleFiles(event.target.files)
+        }}
+      />
+      <input
+        ref={pdfInputRef}
+        data-testid="anexo-pdf-input"
+        type="file"
+        accept="application/pdf,.pdf"
+        hidden
+        onChange={(event) => {
+          void handleFiles(event.target.files)
+        }}
+      />
+
+      {anexos.length === 0 ? (
+        <IonNote data-testid="anexos-empty">{strings.anexos.empty}</IonNote>
+      ) : (
+        <IonList data-testid="anexos-list">
+          {anexos.map((anexo) => (
+            <IonItem key={anexo.id} data-testid={`anexo-item-${anexo.id}`}>
+              <IonLabel>
+                <h3 data-testid={`anexo-name-${anexo.id}`}>
+                  {anexo.fileName ?? (anexo.mimeType === MIME_PDF ? 'PDF' : 'Imagem')}
+                </h3>
+                <IonNote>
+                  {strings.anexos.sizeLabel}: {formatSize(anexo.sizeBytes)}
+                </IonNote>
+              </IonLabel>
+              <div slot="end" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <IonButton
+                  data-testid={`anexo-view-${anexo.id}`}
+                  size="small"
+                  fill="outline"
+                  onClick={() => {
+                    void handleView(anexo)
+                  }}
+                >
+                  {strings.anexos.view}
+                </IonButton>
+                <IonButton
+                  data-testid={`anexo-delete-${anexo.id}`}
+                  size="small"
+                  color="danger"
+                  fill="clear"
+                  onClick={() => setPendingDelete(anexo)}
+                >
+                  {strings.anexos.remove}
+                </IonButton>
+              </div>
+            </IonItem>
+          ))}
+        </IonList>
+      )}
+
+      {previewUrl && (
+        <div data-testid="anexo-preview" style={{ marginTop: '1rem' }}>
+          {previewMime === MIME_PDF ? (
+            <iframe
+              title={strings.anexos.view}
+              src={previewUrl}
+              style={{ width: '100%', minHeight: '280px', border: '1px solid #ccc' }}
+            />
+          ) : (
+            <img
+              data-testid="anexo-preview-image"
+              src={previewUrl}
+              alt={strings.anexos.view}
+              style={{ maxWidth: '100%', height: 'auto' }}
+            />
+          )}
+          <IonButton
+            data-testid="anexo-preview-close"
+            size="small"
+            fill="clear"
+            onClick={clearPreview}
+          >
+            {strings.anexos.closePreview}
+          </IonButton>
+        </div>
+      )}
+
+      <IonAlert
+        isOpen={pendingDelete !== null}
+        header={strings.anexos.deleteTitle}
+        message={strings.anexos.deleteMessage}
+        buttons={[
+          {
+            text: strings.anexos.deleteCancel,
+            role: 'cancel',
+            handler: () => setPendingDelete(null),
+          },
+          {
+            text: strings.anexos.deleteConfirm,
+            role: 'destructive',
+            handler: () => {
+              const target = pendingDelete
+              setPendingDelete(null)
+              if (target) void removeAnexo(target.id)
+            },
+          },
+        ]}
+        onDidDismiss={() => setPendingDelete(null)}
+      />
+
+      <IonAlert
+        isOpen={pendingPdf !== null}
+        header={strings.anexos.pdfWarnTitle}
+        message={strings.anexos.pdfWarnMessage}
+        buttons={[
+          {
+            text: strings.anexos.pdfWarnCancel,
+            role: 'cancel',
+            handler: () => setPendingPdf(null),
+          },
+          {
+            text: strings.anexos.pdfWarnConfirm,
+            role: 'confirm',
+            handler: () => {
+              const prepared = pendingPdf
+              setPendingPdf(null)
+              if (prepared) void confirmPreparedAnexo(prepared)
+            },
+          },
+        ]}
+        onDidDismiss={() => setPendingPdf(null)}
+      />
+    </section>
+  )
+}

@@ -1,0 +1,7 @@
+export { useAnexos } from './useAnexos'
+export { useAppPrefs } from './useAppPrefs'
+export { useCofre } from './useCofre'
+export { useManutencoes } from './useManutencoes'
+export { useOcr } from './useOcr'
+export { useRelatorio } from './useRelatorio'
+export { useVeiculos } from './useVeiculos'
