@@ -86,6 +86,7 @@ export function HomePage() {
   } = useCofre()
 
   const {
+    prefs,
     termoAccepted,
     showBackupReminder,
     acceptTermo,
@@ -257,6 +258,17 @@ export function HomePage() {
   const showAds = showCofreUi && !isCadastroFlow && !showTermoGate
   const showTabs = showCofreUi && !showFullOnboarding && !showTermoGate
   const showHomeTitle = status === 'loading' || showFullOnboarding || showTermoGate
+  const isVeiculosHome = showCofreUi && tab === 'veiculos' && view.kind === 'main'
+  const showIonHeader = !isVeiculosHome
+  const backupBannerNode =
+    showCofreUi && showBackupReminder && session && !isCadastroFlow ? (
+      <BackupReminderBanner
+        onExport={() => {
+          void handleExport()
+        }}
+        onDismiss={dismissReminderForSession}
+      />
+    ) : null
 
   if (!browserSupported || status === 'opfs-unavailable') {
     return <BrowserUnsupportedGate />
@@ -264,22 +276,24 @@ export function HomePage() {
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          {showHeaderBack && (
-            <IonButtons slot="start">
-              <IonButton
-                data-testid="header-back"
-                aria-label={strings.shell.back}
-                onClick={handleHeaderBack}
-              >
-                <IonIcon slot="icon-only" icon={chevronBack} />
-              </IonButton>
-            </IonButtons>
-          )}
-          <IonTitle>{headerTitle(tab, view, { showHomeTitle })}</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+      {showIonHeader && (
+        <IonHeader>
+          <IonToolbar>
+            {showHeaderBack && (
+              <IonButtons slot="start">
+                <IonButton
+                  data-testid="header-back"
+                  aria-label={strings.shell.back}
+                  onClick={handleHeaderBack}
+                >
+                  <IonIcon slot="icon-only" icon={chevronBack} />
+                </IonButton>
+              </IonButtons>
+            )}
+            <IonTitle>{headerTitle(tab, view, { showHomeTitle })}</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+      )}
       <IonContent className="ion-padding">
         {status === 'loading' && <p>{strings.cofre.openWorking}</p>}
 
@@ -293,14 +307,7 @@ export function HomePage() {
 
         {showTermoGate && <TermoGate onAccept={handleAcceptTermo} />}
 
-        {showCofreUi && showBackupReminder && session && !isCadastroFlow && (
-          <BackupReminderBanner
-            onExport={() => {
-              void handleExport()
-            }}
-            onDismiss={dismissReminderForSession}
-          />
-        )}
+        {backupBannerNode && !isVeiculosHome && backupBannerNode}
 
         {showCofreUi && feedbackMessage && (
           <IonText color="success">
@@ -395,7 +402,9 @@ export function HomePage() {
             <div data-testid="tab-panel-veiculos">
               <VeiculosList
                 veiculos={veiculos}
+                lastBackupAt={prefs.lastBackupAt}
                 getManutencoesCount={getManutencoesCount}
+                backupBanner={backupBannerNode}
                 onAdd={() => setView({ kind: 'veiculo-form', veiculoId: null })}
                 onEdit={(veiculo) => setView({ kind: 'veiculo-form', veiculoId: veiculo.id })}
                 onOpenHistorico={(veiculo) => {

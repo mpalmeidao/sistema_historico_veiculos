@@ -110,6 +110,10 @@ Estabelecidas:
   - Gestão do cofre (criar/importar/exportar/meta/termo) na aba Ajustes; aba inicial Veículos no uso normal
   - Navegação aninhada (formulário de veículo, histórico, formulário de manutenção): seta de voltar no `IonHeader` (`data-testid="header-back"`), sem React Router
   - Suporte mínimo: `isMinimumBrowserSupported()` (OPFS; mock E2E `__HVCF_MOCK_MINIMUM_BROWSER__`); abaixo disso `BrowserUnsupportedGate`
+  - **UI / design system — convenções fixas:**
+    - Tokens em `src/ui/theme/` (`tokens.css` + `components.css`), importados em `App.tsx` após o CSS do Ionic — tema a primária navy e o fundo cinza claro sem segundo UI kit (ADR-003)
+    - Home Veículos: cabeçalho “Meus veículos”, faixa de stats (`HomeStatsStrip`), cards com menu kebab (`KebabMenu` + `IonActionSheet`), rodapé de confiança; helpers de apresentação em `src/shared/format/`
+    - Strings novas da home/backup relativo em `src/shared/i18n/pt-BR.ts` (`strings.home.*`)
 - Testes: Vitest unitário com arquivo `[nome].test.ts` ao lado do arquivo testado; E2E Playwright como `[fluxo].e2e.ts` em /tests/e2e — /docs/guidelines/testing.md
 - Cobertura de teste é mínima por padrão, mas **obrigatória** em migrações de schema e no parser OCR→formulário, onde um bug corrompe ou perde dados do usuário sem possibilidade de recuperação — sem backend, não há como recuperar
 

@@ -30,6 +30,8 @@ test.describe('shell Ionic na rota raiz', () => {
     await openTab(page, 'veiculos')
     await expect(page.getByTestId('tab-panel-veiculos')).toBeVisible()
     await expect(page.getByTestId('veiculos-empty')).toBeVisible()
+    await expect(page.getByTestId('tab-veiculos')).toHaveClass(/tab-selected/)
+    await expect(page.getByTestId('ads-banner-placeholder')).toBeVisible()
 
     await openTab(page, 'manutencoes')
     await expect(page.getByTestId('manutencoes-pick-veiculo')).toBeVisible()

@@ -1,0 +1,87 @@
+/**
+ * Tokens de marca HVCF — fonte única para cor, tipografia, raio e elevação.
+ *
+ * Contraste WCAG 2.2 AA (relatório 2026-08-28, fórmula de luminância relativa):
+ * - #111827 sobre #F5F7F9 → 16.52:1
+ * - #111827 sobre #FFFFFF → 17.74:1
+ * - #6B7280 sobre #F5F7F9 → 4.50:1
+ * - #6B7280 sobre #FFFFFF → 4.83:1
+ * - #FFFFFF sobre #1A3557 → 12.42:1
+ * - #111827 sobre #FFF9EB → 16.90:1
+ * - #1A3557 sobre #E8F0F7 → 10.79:1
+ */
+
+:root {
+  /* Paleta */
+  --hvcf-color-bg: #f5f7f9;
+  --hvcf-color-surface: #ffffff;
+  --hvcf-color-primary: #1a3557;
+  --hvcf-color-primary-rgb: 26, 53, 87;
+  --hvcf-color-primary-contrast: #ffffff;
+  --hvcf-color-primary-shade: #162e4c;
+  --hvcf-color-primary-tint: #314968;
+  --hvcf-color-text: #111827;
+  --hvcf-color-text-secondary: #6b7280;
+  --hvcf-color-alert-bg: #fff9eb;
+  --hvcf-color-alert-border: #f5e6c8;
+  --hvcf-color-chip-bg: #e8f0f7;
+  --hvcf-color-border-subtle: #e5e7eb;
+
+  /* Tipografia */
+  --hvcf-font-sans: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --hvcf-font-size-eyebrow: 0.75rem;
+  --hvcf-font-size-title: 1.5rem;
+  --hvcf-font-size-body: 0.9375rem;
+  --hvcf-font-size-meta: 0.8125rem;
+  --hvcf-font-weight-semibold: 600;
+  --hvcf-font-weight-bold: 700;
+  --hvcf-line-height-body: 1.5;
+
+  /* Forma */
+  --hvcf-radius-sm: 8px;
+  --hvcf-radius-md: 12px;
+  --hvcf-radius-lg: 16px;
+  --hvcf-radius-pill: 999px;
+
+  /* Elevação */
+  --hvcf-shadow-card: 0 1px 3px rgba(17, 24, 39, 0.08), 0 1px 2px rgba(17, 24, 39, 0.04);
+
+  /* Foco (≥ 2px, contraste ≥ 3:1) */
+  --hvcf-focus-ring: 0 0 0 2px var(--hvcf-color-surface), 0 0 0 4px var(--hvcf-color-primary);
+
+  /* Integração Ionic (ADR-003) */
+  --ion-color-primary: var(--hvcf-color-primary);
+  --ion-color-primary-rgb: var(--hvcf-color-primary-rgb);
+  --ion-color-primary-contrast: var(--hvcf-color-primary-contrast);
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: var(--hvcf-color-primary-shade);
+  --ion-color-primary-tint: var(--hvcf-color-primary-tint);
+
+  --ion-background-color: var(--hvcf-color-bg);
+  --ion-background-color-rgb: 245, 247, 249;
+  --ion-text-color: var(--hvcf-color-text);
+  --ion-text-color-rgb: 17, 24, 39;
+  --ion-font-family: var(--hvcf-font-sans);
+}
+
+ion-app,
+ion-content {
+  --background: var(--hvcf-color-bg);
+  font-family: var(--hvcf-font-sans);
+  color: var(--hvcf-color-text);
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--hvcf-focus-ring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

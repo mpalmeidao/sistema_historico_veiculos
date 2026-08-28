@@ -17,6 +17,10 @@ import '@ionic/react/css/text-transformation.css'
 import '@ionic/react/css/flex-utils.css'
 import '@ionic/react/css/display.css'
 
+/* Tema HVCF (tokens + componentes da home) — após CSS do Ionic */
+import './ui/theme/tokens.css'
+import './ui/theme/components.css'
+
 setupIonicReact()
 
 function App() {

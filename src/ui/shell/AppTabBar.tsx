@@ -22,15 +22,12 @@ export interface AppTabBarProps {
 
 /**
  * Navegação inferior mobile-first (sem React Router no MVP).
- * IonTabButton + href="#" evita navegação real; onClick troca a área.
+ * Sem slot="bottom": a barra vive no IonFooter; o slot é para IonTabs e bagunça o layout.
+ * Item ativo: cor primária + ponto sob o rótulo (design system home).
  */
 export function AppTabBar({ activeTab, onTabChange }: AppTabBarProps) {
   return (
-    <IonTabBar
-      slot="bottom"
-      data-testid="app-tab-bar"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
-    >
+    <IonTabBar data-testid="app-tab-bar" className="hvcf-tab-bar">
       {(Object.keys(TAB_ICONS) as AppTabId[]).map((tab) => (
         <IonTabButton
           key={tab}
@@ -43,7 +40,7 @@ export function AppTabBar({ activeTab, onTabChange }: AppTabBarProps) {
             onTabChange(tab)
           }}
         >
-          <IonIcon icon={TAB_ICONS[tab]} />
+          <IonIcon icon={TAB_ICONS[tab]} aria-hidden="true" />
           <IonLabel>{TAB_LABELS[tab]}</IonLabel>
         </IonTabButton>
       ))}
