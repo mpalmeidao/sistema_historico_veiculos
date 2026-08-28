@@ -39,6 +39,7 @@ test.describe('anexos', () => {
     await page.getByTestId('manutencao-salvar').click()
     await expect(page.getByTestId('manutencoes-list')).toBeVisible()
 
+    await page.getByTestId('manutencao-menu-1').click()
     await page.getByTestId('manutencao-edit-1').click()
     await expect(page.getByTestId('anexos-section')).toBeVisible()
     await expect(page.getByTestId('anexo-item-1')).toBeVisible()
@@ -51,6 +52,7 @@ test.describe('anexos', () => {
     await openTab(page, 'veiculos')
 
     await page.getByTestId('veiculo-historico-1').click()
+    await page.getByTestId('manutencao-menu-1').click()
     await page.getByTestId('manutencao-edit-1').click()
     await expect(page.getByTestId('anexo-item-1')).toBeVisible()
     await expect(page.getByTestId('anexo-name-1')).toContainText('nota-fiscal')
@@ -82,6 +84,7 @@ test.describe('anexos', () => {
     await page.getByTestId('manutencao-salvar').click()
     await expect(page.getByTestId('manutencoes-list')).toBeVisible()
 
+    await page.getByTestId('manutencao-menu-1').click()
     await page.getByTestId('manutencao-edit-1').click()
     await expect(page.getByTestId('anexos-section')).toBeVisible()
     await expect(page.getByTestId('anexos-empty')).toBeVisible()
@@ -99,6 +102,7 @@ test.describe('anexos', () => {
     await openTab(page, 'veiculos')
 
     await page.getByTestId('veiculo-historico-1').click()
+    await page.getByTestId('manutencao-menu-1').click()
     await page.getByTestId('manutencao-edit-1').click()
     await expect(page.getByTestId('anexo-item-1')).toBeVisible()
     await expect(page.getByTestId('anexo-name-1')).toContainText('nota-fiscal')

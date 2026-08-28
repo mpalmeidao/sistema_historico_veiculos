@@ -516,7 +516,9 @@ export function HomePage() {
                 }}
               />
             ) : (
-              <p data-testid="manutencoes-pick-veiculo">{strings.shell.manutencoesPickVeiculo}</p>
+              <p className="hvcf-pick-veiculo" data-testid="manutencoes-pick-veiculo">
+                {strings.shell.manutencoesPickVeiculo}
+              </p>
             )}
           </div>
         )}

@@ -1,6 +1,11 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { strings } from '../../src/shared/i18n'
 import { acceptOnboardingCreateCofreAndOpenVeiculos, openTab } from './helpers/onboarding'
+
+async function openManutencaoMenu(page: Page, id: number) {
+  await page.getByTestId(`manutencao-menu-${id}`).click()
+  await expect(page.getByTestId(`manutencao-edit-${id}`)).toBeVisible()
+}
 
 test.describe('manutenções', () => {
   test('deve criar, listar, editar e excluir manutenção no veículo', async ({ page }) => {
@@ -12,14 +17,27 @@ test.describe('manutenções', () => {
     await page.getByTestId('veiculo-placa').locator('input').fill('ABC1D23')
     await page.getByTestId('veiculo-marca-modelo').locator('input').fill('Fiat Uno')
     await page.getByTestId('veiculo-km-atual').locator('input').fill('45000')
+    await page.getByTestId('veiculo-proxima-troca').locator('input').fill('Prevista em 50.000 km')
     await page.getByTestId('veiculo-salvar').click()
     await expect(page.getByTestId('veiculos-list')).toBeVisible()
 
     await page.getByTestId('veiculo-historico-1').click()
     await expect(page.getByTestId('manutencoes-empty')).toBeVisible()
+    await expect(page.getByTestId('manutencoes-veiculo-titulo')).toHaveText('ABC1D23')
+    await expect(page.getByTestId('manutencoes-veiculo-marca')).toHaveText('Fiat Uno')
+    await expect(page.getByTestId('manutencoes-stats')).toBeVisible()
+    await expect(page.getByTestId('manutencoes-stat-km')).toContainText('45.000')
+    await expect(page.getByTestId('manutencoes-stat-count')).toContainText('0')
+    await expect(page.getByTestId('manutencoes-stat-total')).toContainText(
+      strings.manutencoes.totalGastoAusente,
+    )
+    await expect(page.getByTestId('manutencoes-proxima-troca')).toContainText(
+      'Prevista em 50.000 km',
+    )
     await expect(page.getByTestId('manutencao-empty-cta')).toContainText(
       strings.manutencoes.emptyCta,
     )
+    await expect(page.getByTestId('relatorio-gerar')).toHaveAttribute('aria-disabled', 'true')
 
     await page.getByTestId('manutencao-empty-cta').click()
     await expect(page.getByTestId('manutencao-form')).toBeVisible()
@@ -41,10 +59,19 @@ test.describe('manutenções', () => {
     await page.getByTestId('manutencao-salvar').click()
 
     await expect(page.getByTestId('manutencoes-list')).toBeVisible()
-    await expect(page.getByTestId('manutencao-data-1')).toHaveText('2026-01-15')
+    await expect(page.getByTestId('manutencao-data-1')).toHaveText('15 jan 2026')
     await expect(page.getByTestId('manutencao-tipo-1')).toHaveText('Troca de óleo')
+    await expect(page.getByTestId('manutencao-badge-recente-1')).toHaveText(
+      strings.manutencoes.maisRecente,
+    )
+    await expect(page.getByTestId('manutencoes-timeline-start')).toContainText(
+      strings.manutencoes.inicioHistorico,
+    )
     await expect(page.getByTestId('manutencao-item-1')).toContainText('250,50')
+    await expect(page.getByTestId('manutencoes-stat-count')).toContainText('1')
+    await expect(page.getByTestId('manutencao-add')).toBeVisible()
 
+    await openManutencaoMenu(page, 1)
     await page.getByTestId('manutencao-edit-1').click()
     await expect(page.getByTestId('manutencao-form')).toBeVisible()
     await page
@@ -67,6 +94,7 @@ test.describe('manutenções', () => {
     await expect(page.getByTestId('manutencao-tipo-1')).toHaveText('Troca de óleo e filtro')
     await expect(page.getByTestId('manutencao-item-1')).toContainText('40.100')
 
+    await openManutencaoMenu(page, 1)
     await page.getByTestId('manutencao-delete-1').click()
     await page
       .getByLabel(strings.manutencoes.deleteTitle)
@@ -81,5 +109,6 @@ test.describe('manutenções', () => {
     await openTab(page, 'veiculos')
     await page.getByTestId('veiculo-historico-1').click()
     await expect(page.getByTestId('manutencoes-empty')).toBeVisible()
+    await expect(page.getByTestId('manutencoes-proxima-troca')).toBeVisible()
   })
 })

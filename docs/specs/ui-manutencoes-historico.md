@@ -1,6 +1,6 @@
 # Spec: Tela de manutenções (histórico do veículo)
 
-**Status:** rascunho
+**Status:** implementado
 **Data:** 2026-08-28
 **Arquitetura relacionada:** [sistema-historico-veiculos](/docs/architecture/sistema-historico-veiculos.md)
 **ADRs relacionados:**
@@ -110,20 +110,20 @@ Botão em bloco estilo pílula/navy: **“+ Nova manutenção”**, abrindo o fo
 
 ## Critérios de aceite
 
-- [ ] Cabeçalho com voltar + “Manutenções” + identidade do veículo (placa, marca/modelo)
-- [ ] Stats exibem km atual, contagem de manutenções e total gasto (soma BRL / ausência tratada)
-- [ ] Card de próxima troca só aparece com `proximaTroca` preenchida e mostra o texto do campo
-- [ ] Seção Histórico com ação “Gerar PDF” respeitando bloqueio sem itens e feedback sucesso/erro
-- [ ] Lista em timeline: mais recente com marcador preenchido + badge; demais com marcador oco; rodapé “Início do histórico”
-- [ ] Cada item mostra data legível, tipo de serviço, km, oficina (se houver), valor (se houver) e menu Editar/Excluir
-- [ ] Exclusão mantém confirmação; edição abre o formulário existente
-- [ ] CTA “Nova manutenção” cria manutenção no veículo atual
-- [ ] Empty state permite registrar a primeira manutenção
-- [ ] Tab Manutenções ativa no shell; ads/safe-area inalterados nas regras atuais
-- [ ] Visual consome os tokens do design system (navy, fundo cinza, creme, tipografia)
-- [ ] Strings novas apenas em `pt-BR.ts`
-- [ ] Controles novos operáveis por teclado; nome acessível contém o texto visível (SC 2.5.3)
-- [ ] E2E de manutenções / relatório / shell atualizados aos novos seletores/rótulos e passando
+- [x] Cabeçalho com voltar + “Manutenções” + identidade do veículo (placa, marca/modelo)
+- [x] Stats exibem km atual, contagem de manutenções e total gasto (soma BRL / ausência tratada)
+- [x] Card de próxima troca só aparece com `proximaTroca` preenchida e mostra o texto do campo
+- [x] Seção Histórico com ação “Gerar PDF” respeitando bloqueio sem itens e feedback sucesso/erro
+- [x] Lista em timeline: mais recente com marcador preenchido + badge; demais com marcador oco; rodapé “Início do histórico”
+- [x] Cada item mostra data legível, tipo de serviço, km, oficina (se houver), valor (se houver) e menu Editar/Excluir
+- [x] Exclusão mantém confirmação; edição abre o formulário existente
+- [x] CTA “Nova manutenção” cria manutenção no veículo atual
+- [x] Empty state permite registrar a primeira manutenção
+- [x] Tab Manutenções ativa no shell; ads/safe-area inalterados nas regras atuais
+- [x] Visual consome os tokens do design system (navy, fundo cinza, creme, tipografia)
+- [x] Strings novas apenas em `pt-BR.ts`
+- [x] Controles novos operáveis por teclado; nome acessível contém o texto visível (SC 2.5.3)
+- [x] E2E de manutenções / relatório / shell atualizados aos novos seletores/rótulos e passando
 
 ## Estratégia de teste
 

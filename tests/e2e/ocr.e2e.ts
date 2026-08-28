@@ -88,6 +88,7 @@ test.describe('OCR', () => {
     await expect(page.getByTestId('manutencoes-list')).toBeVisible()
     await expect(page.getByTestId('manutencao-tipo-1')).toHaveText('Troca de óleo (revisado)')
 
+    await page.getByTestId('manutencao-menu-1').click()
     await page.getByTestId('manutencao-edit-1').click()
     await expect(page.getByTestId('anexos-list')).toBeVisible()
   })
@@ -115,6 +116,7 @@ test.describe('OCR', () => {
     await expect(page.getByTestId('manutencoes-list')).toBeVisible()
     await expect(page.getByTestId('manutencao-tipo-1')).toHaveText('Manual após falha')
 
+    await page.getByTestId('manutencao-menu-1').click()
     await page.getByTestId('manutencao-edit-1').click()
     await expect(page.getByTestId('anexos-list')).toBeVisible()
   })
