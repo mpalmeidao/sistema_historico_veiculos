@@ -2,7 +2,7 @@ import { expect, type Page } from '@playwright/test'
 import { BACKUP_REMINDER_EDIT_THRESHOLD } from '../../../src/shared/appPrefs'
 import { strings } from '../../../src/shared/i18n'
 
-export type ShellTab = 'cofre' | 'veiculos' | 'manutencoes' | 'config'
+export type ShellTab = 'veiculos' | 'manutencoes' | 'config'
 
 /** Aceita o termo no onboarding completo (primeiro uso sem cofre). */
 export async function acceptOnboarding(page: Page): Promise<void> {

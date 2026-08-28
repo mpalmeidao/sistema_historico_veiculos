@@ -16,7 +16,6 @@ export const strings = {
     unsupportedBody:
       'Este navegador não oferece armazenamento local seguro (OPFS). Atualize para Safari 16.4+, Chrome, Edge ou Firefox recentes para usar o app com segurança.',
     tabs: {
-      cofre: 'Cofre',
       veiculos: 'Veículos',
       manutencoes: 'Manutenções',
       config: 'Ajustes',
@@ -198,7 +197,6 @@ export const strings = {
     unsupportedType: 'Tipo de arquivo não suportado. Use imagem (foto) ou PDF.',
     workerFailed: 'Não foi possível processar a imagem. O anexo não foi salvo.',
     sizeLabel: 'Tamanho',
-    hintAfterSave: 'Salve a manutenção para poder anexar a nota fiscal.',
   },
   onboarding: {
     title: 'Bem-vindo',
@@ -212,7 +210,7 @@ export const strings = {
       'Exporte o arquivo .cofre com frequência e guarde cópias em lugares distintos — por exemplo, uma nuvem pessoal e um pen drive ou HD externo. Se perder o único arquivo, o histórico não pode ser recuperado.',
     howToExportTitle: 'Como exportar (backup manual)',
     howToExportBody:
-      'Na tela principal, use o botão “Exportar .cofre”. Isso baixa uma cópia do seu arquivo para você guardar onde preferir.',
+      'Em Ajustes, use o botão “Exportar .cofre”. Isso baixa uma cópia do seu arquivo para você guardar onde preferir.',
     acceptCheckbox: 'Li e aceito o termo de isenção de responsabilidade',
     continue: 'Aceitar e continuar',
     mustAccept: 'Aceite o termo para criar ou importar um cofre.',
@@ -234,24 +232,27 @@ export const strings = {
   },
   ocr: {
     title: 'Extrair dados da nota (OCR)',
-    pickImage: 'Escolher imagem da nota',
     processing: 'Lendo a nota…',
     cancel: 'Cancelar OCR',
-    hint: 'O OCR só pré-preenche. Revise os campos antes de salvar. PDF não tem OCR automático neste MVP.',
+    hint: 'Ao anexar uma foto da nota, o OCR tenta pré-preencher os campos. Revise antes de salvar. PDF é anexado sem OCR automático.',
     appliedOk: 'Sugestões aplicadas. Revise e salve quando quiser.',
     emptyResult:
-      'Não foi possível identificar campos na nota. Preencha manualmente — o salvamento continua disponível.',
+      'Não foi possível identificar campos na nota. A nota foi anexada — preencha manualmente.',
+    attachedWithoutPrefill:
+      'Nota anexada. Não foi possível pré-preencher o formulário — complete os campos manualmente.',
+    pdfNoOcr:
+      'PDF anexado. Neste MVP não há OCR automático para PDF — preencha os campos manualmente.',
     modelAckTitle: 'Baixar modelo de OCR?',
     modelAckMessage:
-      'Na primeira uso é necessário baixar o modelo de português (cerca de {{sizeMb}} MB). Depois ele pode ser reutilizado (e cacheado pelo app). Sem o download, você pode continuar preenchendo manualmente.',
+      'Na primeira uso é necessário baixar o modelo de português (cerca de {{sizeMb}} MB). Depois ele pode ser reutilizado (e cacheado pelo app). Sem o download, a nota permanece anexada e você preenche manualmente.',
     modelAckConfirm: 'Baixar e continuar',
     modelAckSkip: 'Continuar sem OCR',
     retry: 'Tentar de novo',
     continueManual: 'Continuar sem OCR',
     failed:
-      'Não foi possível ler a nota. Verifique a conexão (modelo) ou tente outra imagem. O preenchimento manual permanece disponível.',
+      'Não foi possível ler a nota. A nota permanece anexada — verifique a conexão (modelo) ou tente outra imagem. O preenchimento manual permanece disponível.',
     modelDownloadFailed:
-      'Falha ao baixar o modelo de OCR. Tente de novo com conexão ou continue sem OCR.',
+      'Falha ao baixar o modelo de OCR. A nota permanece anexada — tente de novo com conexão ou continue sem OCR.',
   },
   relatorio: {
     generate: 'Gerar relatório PDF',

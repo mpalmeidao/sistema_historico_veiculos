@@ -39,6 +39,7 @@ test.describe('onboarding e backup', () => {
 
     await page.reload()
 
+    await openTab(page, 'config')
     await expect(page.getByTestId('onboarding')).toHaveCount(0)
     await expect(page.getByTestId('cofre-meta')).toBeVisible()
     await expect(page.getByTestId('termo-open')).toBeVisible()
@@ -74,7 +75,7 @@ test.describe('onboarding e backup', () => {
     await expect(page.getByTestId('backup-reminder')).toBeVisible()
     // Lembrete não bloqueia o uso do app
     await expect(page.getByTestId('veiculos-list')).toBeVisible()
-    await openTab(page, 'cofre')
+    await openTab(page, 'config')
     await expect(page.getByTestId('cofre-export')).toBeEnabled()
     await openTab(page, 'veiculos')
 

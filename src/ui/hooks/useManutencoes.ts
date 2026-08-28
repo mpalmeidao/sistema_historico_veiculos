@@ -21,7 +21,7 @@ export interface UseManutencoesResult {
   saveManutencao: (
     raw: ManutencaoRawInput,
     manutencaoId: number | null,
-  ) => Promise<{ ok: true } | { ok: false; fieldErrors: ManutencaoFieldError[] }>
+  ) => Promise<{ ok: true; id: number } | { ok: false; fieldErrors: ManutencaoFieldError[] }>
   removeManutencao: (id: number) => Promise<void>
   clearFeedback: () => void
 }
@@ -60,19 +60,22 @@ export function useManutencoes(
     async (
       raw: ManutencaoRawInput,
       manutencaoId: number | null,
-    ): Promise<{ ok: true } | { ok: false; fieldErrors: ManutencaoFieldError[] }> => {
+    ): Promise<{ ok: true; id: number } | { ok: false; fieldErrors: ManutencaoFieldError[] }> => {
       if (!session) return { ok: false, fieldErrors: [] }
       setErrorMessage(null)
       try {
+        let id: number
         if (manutencaoId === null) {
-          await createManutencao(session, raw)
+          const created = await createManutencao(session, raw)
+          id = created.id
         } else {
           await updateManutencao(session, manutencaoId, raw)
+          id = manutencaoId
         }
         setMessage(strings.manutencoes.savedOk)
         reload()
         onMutated?.()
-        return { ok: true }
+        return { ok: true, id }
       } catch (error) {
         if (error instanceof ManutencaoDomainError && error.code === 'VALIDATION') {
           return { ok: false, fieldErrors: error.fieldErrors ?? [] }

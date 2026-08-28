@@ -3,7 +3,7 @@ import { strings } from '../../src/shared/i18n'
 import path from 'node:path'
 import fs from 'node:fs'
 import os from 'node:os'
-import { acceptOnboardingAndCreateCofre } from './helpers/onboarding'
+import { acceptOnboardingAndCreateCofre, openTab } from './helpers/onboarding'
 
 test.describe('cofre storage', () => {
   test('deve criar cofre, persistir após reload e round-trip export/import', async ({ page }) => {
@@ -15,6 +15,7 @@ test.describe('cofre storage', () => {
 
     await page.reload()
 
+    await openTab(page, 'config')
     await expect(page.getByTestId('cofre-meta')).toBeVisible()
     await expect(page.getByTestId('cofre-content-version')).toHaveText('1')
 

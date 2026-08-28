@@ -1,17 +1,15 @@
 import { IonIcon, IonLabel, IonTabBar, IonTabButton } from '@ionic/react'
-import { archiveOutline, carOutline, constructOutline, settingsOutline } from 'ionicons/icons'
+import { carOutline, constructOutline, settingsOutline } from 'ionicons/icons'
 import { strings } from '../../shared/i18n'
 import type { AppTabId } from './tabs'
 
 const TAB_ICONS: Record<AppTabId, string> = {
-  cofre: archiveOutline,
   veiculos: carOutline,
   manutencoes: constructOutline,
   config: settingsOutline,
 }
 
 const TAB_LABELS: Record<AppTabId, string> = {
-  cofre: strings.shell.tabs.cofre,
   veiculos: strings.shell.tabs.veiculos,
   manutencoes: strings.shell.tabs.manutencoes,
   config: strings.shell.tabs.config,

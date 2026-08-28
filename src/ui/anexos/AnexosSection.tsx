@@ -13,6 +13,9 @@ export interface AnexosSectionProps {
   confirmPreparedAnexo: UseAnexosResult['confirmPreparedAnexo']
   loadAnexoBytes: UseAnexosResult['loadAnexoBytes']
   removeAnexo: UseAnexosResult['removeAnexo']
+  /** Chamado após anexo persistido ou pendente (criação). */
+  onAttached?: (prepared: PreparedAnexo) => void
+  disabled?: boolean
 }
 
 function formatSize(bytes: number): string {
@@ -29,6 +32,8 @@ export function AnexosSection({
   confirmPreparedAnexo,
   loadAnexoBytes,
   removeAnexo,
+  onAttached,
+  disabled = false,
 }: AnexosSectionProps) {
   const photoInputRef = useRef<HTMLInputElement>(null)
   const pdfInputRef = useRef<HTMLInputElement>(null)
@@ -65,6 +70,10 @@ export function AnexosSection({
     const result = await attachFile(file)
     if (result.status === 'needs-pdf-confirm') {
       setPendingPdf(result.prepared)
+      return
+    }
+    if (result.status === 'saved') {
+      onAttached?.(result.prepared)
     }
   }
 
@@ -80,9 +89,12 @@ export function AnexosSection({
     setPreviewMime(full.mimeType)
   }
 
+  const busy = processing || disabled
+
   return (
-    <section data-testid="anexos-section" style={{ marginTop: '1.5rem' }}>
+    <section data-testid="anexos-section" style={{ marginBottom: '1rem' }}>
       <h3 style={{ marginBottom: '0.5rem' }}>{strings.anexos.title}</h3>
+      <IonNote data-testid="ocr-hint">{strings.ocr.hint}</IonNote>
 
       {errorMessage && (
         <IonText color="danger">
@@ -92,12 +104,18 @@ export function AnexosSection({
       {processing && <IonNote data-testid="anexos-processing">{strings.anexos.processing}</IonNote>}
 
       <div
-        style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '0.75rem' }}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.5rem',
+          marginTop: '0.75rem',
+          marginBottom: '0.75rem',
+        }}
       >
         <IonButton
           data-testid="anexo-add-photo"
           size="small"
-          disabled={processing}
+          disabled={busy}
           onClick={() => photoInputRef.current?.click()}
         >
           {strings.anexos.addPhoto}
@@ -106,7 +124,7 @@ export function AnexosSection({
           data-testid="anexo-add-pdf"
           size="small"
           fill="outline"
-          disabled={processing}
+          disabled={busy}
           onClick={() => pdfInputRef.current?.click()}
         >
           {strings.anexos.addPdf}
@@ -241,7 +259,11 @@ export function AnexosSection({
             handler: () => {
               const prepared = pendingPdf
               setPendingPdf(null)
-              if (prepared) void confirmPreparedAnexo(prepared)
+              if (!prepared) return
+              void (async () => {
+                const result = await confirmPreparedAnexo(prepared)
+                if (result.ok) onAttached?.(result.prepared)
+              })()
             },
           },
         ]}

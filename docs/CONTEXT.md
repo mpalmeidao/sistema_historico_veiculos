@@ -76,13 +76,15 @@ Estabelecidas:
   - Aceita imagem (`image/*`) e PDF; demais tipos → `UNSUPPORTED_TYPE`
   - Imagens: worker `processImageInWorker` (OffscreenCanvas) — máx. 1600 px no lado maior, JPEG ~80%, alvo ≤ 500 KB; falha do worker → `WORKER_FAILED` (não grava blob parcial)
   - PDF: armazenado sem recompressão; aviso na UI se ≥ ~2 MB (`pdfNeedsSizeWarning` / `PDF_WARN_BYTES`)
-  - UI: `<input type="file" accept="image/*" capture="environment">` + input PDF; visualização e remoção com confirmação no formulário de manutenção já salva
+  - UI: seção **Anexos da nota** no topo do formulário de manutenção; `<input type="file" accept="image/*" capture="environment">` + input PDF; visualização e remoção com confirmação
+  - **Criação:** anexos pendentes em memória (`useAnexos` / `flushPending`) até salvar a manutenção; **edição:** persistência imediata
 - **OCR (domínio + workers) — convenções fixas:**
   - Parser puro em `src/domain/ocr` (`parseOcrText`, `mergeOcrSuggestions`) — texto → sugestões; campos sem match ausentes; merge só preenche campos vazios (edição humana prevalece)
   - Campos mapeáveis (subconjunto): data (`YYYY-MM-DD`), km, tipoServico, pecasTrocadas (texto → 1 item no form), oficina, valor (aplicado à peça criada), proximaRevisao
   - Runtime: `runOcrInWorker` — pré-processamento (cinza/contraste/binarização) em Web Worker + Tesseract.js `por` (worker próprio do Tesseract); cancelável via `AbortSignal`
   - Idioma/modelo: `por`; `langPath` em `OCR_MODEL_LANG_PATH` (`@tesseract.js-data/por`); aviso de ~`OCR_MODEL_SIZE_MB_APPROX` MB na primeira uso (`hvcf.ocrModel.v1` / `ocrModelPrefsStore`)
-  - **PDF sem OCR automático no MVP** (`OCR_PDF_AUTOMATIC_SUPPORTED = false`) — OCR só a partir de imagem selecionada no formulário
+  - **Disparo:** automático ao anexar **imagem** no formulário (sem botão OCR separado); falha/vazio/skip → anexo permanece + aviso; preenchimento manual sempre disponível
+  - **PDF sem OCR automático no MVP** (`OCR_PDF_AUTOMATIC_SUPPORTED = false`) — PDF anexa com aviso de ausência de pré-preenchimento
   - OCR nunca bloqueia save manual; falha de rede/modelo → retry ou continuar sem OCR
   - Ponto de integração PWA: cachear URL do modelo (`OCR_MODEL_URL_PATTERN` / `OCR_MODEL_LANG_PATH`) no app-shell — falha de cache não derruba o fluxo
   - Testes: cobertura obrigatória do parser; E2E usa `window.__HVCF_MOCK_OCR__` + prefs ack
@@ -104,7 +106,8 @@ Estabelecidas:
   - Precache: HTML/JS/CSS/WASM/ícones (`globPatterns`); SPA `navigateFallback: 'index.html'` alinhado a `public/_redirects`
   - Runtime CacheFirst só para modelo OCR (`hvcf-ocr-model` / `OCR_MODEL_WORKBOX_URL_PATTERN`); **nunca** `.cofre`, `blob:`, OPFS ou PDFs do usuário
   - Aviso de tamanho do modelo permanece no fluxo OCR; falha de cache do modelo não derruba o shell
-  - Layout: tabs Cofre / Veículos / Manutenções / Ajustes (`src/ui/shell`); safe-area no tab bar; banner de ads reservado (`AdsBannerPlaceholder`, 50px) fora de cadastro/onboarding — sem AdSense no MVP
+  - Layout: tabs Veículos / Manutenções / Ajustes (`src/ui/shell`); safe-area no tab bar; banner de ads reservado (`AdsBannerPlaceholder`, 50px) fora de cadastro/onboarding — sem AdSense no MVP
+  - Gestão do cofre (criar/importar/exportar/meta/termo) na aba Ajustes; aba inicial Veículos no uso normal
   - Navegação aninhada (formulário de veículo, histórico, formulário de manutenção): seta de voltar no `IonHeader` (`data-testid="header-back"`), sem React Router
   - Suporte mínimo: `isMinimumBrowserSupported()` (OPFS; mock E2E `__HVCF_MOCK_MINIMUM_BROWSER__`); abaixo disso `BrowserUnsupportedGate`
 - Testes: Vitest unitário com arquivo `[nome].test.ts` ao lado do arquivo testado; E2E Playwright como `[fluxo].e2e.ts` em /tests/e2e — /docs/guidelines/testing.md

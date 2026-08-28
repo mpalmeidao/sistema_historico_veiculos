@@ -8,8 +8,12 @@ import type {
   ManutencaoRawInput,
   OcrFieldSuggestions,
   PecaFormItem,
+  PreparedAnexo,
 } from '../../domain'
+import { MIME_PDF } from '../../domain'
 import { strings } from '../../shared/i18n'
+import { AnexosSection } from '../anexos/AnexosSection'
+import type { UseAnexosResult } from '../hooks/useAnexos'
 import { useOcr, type OcrRunOutcome } from '../hooks/useOcr'
 import { fieldErrorsMap } from './fieldErrorMessages'
 
@@ -18,9 +22,16 @@ export interface ManutencaoFormProps {
   initial: Manutencao | null
   onSubmit: (
     raw: ManutencaoRawInput,
-  ) => Promise<{ ok: true } | { ok: false; fieldErrors: ManutencaoFieldError[] }>
+  ) => Promise<{ ok: true; id: number } | { ok: false; fieldErrors: ManutencaoFieldError[] }>
   onCancel: () => void
   submitting?: boolean
+  anexos: UseAnexosResult['anexos']
+  anexosProcessing: boolean
+  anexosError: string | null
+  attachFile: UseAnexosResult['attachFile']
+  confirmPreparedAnexo: UseAnexosResult['confirmPreparedAnexo']
+  loadAnexoBytes: UseAnexosResult['loadAnexoBytes']
+  removeAnexo: UseAnexosResult['removeAnexo']
 }
 
 type FormState = ManutencaoFormFields
@@ -70,12 +81,18 @@ export function ManutencaoForm({
   onSubmit,
   onCancel,
   submitting = false,
+  anexos,
+  anexosProcessing,
+  anexosError,
+  attachFile,
+  confirmPreparedAnexo,
+  loadAnexoBytes,
+  removeAnexo,
 }: ManutencaoFormProps) {
   const [form, setForm] = useState<FormState>(() => toFormState(initial))
   const [touched, setTouched] = useState<Partial<Record<ManutencaoField, boolean>>>({})
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<ManutencaoField, string>>>({})
   const [ocrFeedback, setOcrFeedback] = useState<string | null>(null)
-  const ocrInputRef = useRef<HTMLInputElement>(null)
   const pendingOcrBytesRef = useRef<Uint8Array | null>(null)
   const ocr = useOcr()
 
@@ -123,6 +140,9 @@ export function ManutencaoForm({
       return
     }
     if (outcome.kind === 'cancelled' || outcome.kind === 'needs-ack') return
+    if (outcome.kind === 'error') {
+      setOcrFeedback(strings.ocr.attachedWithoutPrefill)
+    }
   }
 
   function applySuggestions(suggestions: OcrFieldSuggestions) {
@@ -137,16 +157,19 @@ export function ManutencaoForm({
     })
   }
 
-  async function handleOcrFile(fileList: FileList | null) {
-    const file = fileList?.[0]
-    if (ocrInputRef.current) ocrInputRef.current.value = ''
-    if (!file || !file.type.startsWith('image/')) return
-
+  async function runOcrOnBytes(bytes: Uint8Array) {
+    pendingOcrBytesRef.current = bytes
     setOcrFeedback(null)
-    const buffer = new Uint8Array(await file.arrayBuffer())
-    pendingOcrBytesRef.current = buffer
-    const outcome = await ocr.requestOcr(buffer)
+    const outcome = await ocr.requestOcr(bytes)
     applyOutcome(outcome)
+  }
+
+  function handleAttached(prepared: PreparedAnexo) {
+    if (prepared.mimeType === MIME_PDF) {
+      setOcrFeedback(strings.ocr.pdfNoOcr)
+      return
+    }
+    void runOcrOnBytes(prepared.bytes)
   }
 
   async function handleSubmit() {
@@ -186,50 +209,43 @@ export function ManutencaoForm({
     <section data-testid="manutencao-form">
       <h2>{title}</h2>
 
-      <div
-        data-testid="ocr-section"
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.5rem',
-          marginBottom: '1rem',
-        }}
-      >
-        <IonNote>{strings.ocr.hint}</IonNote>
-        <IonButton
-          data-testid="ocr-pick-image"
-          size="small"
-          fill="outline"
-          disabled={submitting || ocr.status === 'processing'}
-          onClick={() => ocrInputRef.current?.click()}
-        >
-          {strings.ocr.pickImage}
-        </IonButton>
-        <input
-          ref={ocrInputRef}
-          data-testid="ocr-image-input"
-          type="file"
-          accept="image/*"
-          capture="environment"
-          hidden
-          onChange={(event) => {
-            void handleOcrFile(event.target.files)
+      <AnexosSection
+        anexos={anexos}
+        processing={anexosProcessing}
+        errorMessage={anexosError}
+        attachFile={attachFile}
+        confirmPreparedAnexo={confirmPreparedAnexo}
+        loadAnexoBytes={loadAnexoBytes}
+        removeAnexo={removeAnexo}
+        onAttached={handleAttached}
+        disabled={submitting || ocr.status === 'processing'}
+      />
+
+      {ocr.status === 'processing' && (
+        <div
+          data-testid="ocr-processing-block"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.25rem',
+            marginBottom: '0.75rem',
           }}
-        />
-        {ocr.status === 'processing' && (
-          <>
-            <IonNote data-testid="ocr-processing">{strings.ocr.processing}</IonNote>
-            <IonButton data-testid="ocr-cancel" size="small" fill="clear" onClick={ocr.cancel}>
-              {strings.ocr.cancel}
-            </IonButton>
-          </>
-        )}
-        {ocrFeedback && (
-          <IonNote data-testid="ocr-feedback" color="medium">
-            {ocrFeedback}
-          </IonNote>
-        )}
-      </div>
+        >
+          <IonNote data-testid="ocr-processing">{strings.ocr.processing}</IonNote>
+          <IonButton data-testid="ocr-cancel" size="small" fill="clear" onClick={ocr.cancel}>
+            {strings.ocr.cancel}
+          </IonButton>
+        </div>
+      )}
+      {ocrFeedback && (
+        <IonNote
+          data-testid="ocr-feedback"
+          color="medium"
+          style={{ display: 'block', marginBottom: '0.75rem' }}
+        >
+          {ocrFeedback}
+        </IonNote>
+      )}
 
       <IonList>
         <IonItem>
@@ -394,7 +410,7 @@ export function ManutencaoForm({
             role: 'cancel',
             handler: () => {
               ocr.clearError()
-              setOcrFeedback(null)
+              setOcrFeedback(strings.ocr.attachedWithoutPrefill)
             },
           },
           {
@@ -418,7 +434,10 @@ export function ManutencaoForm({
           {
             text: strings.ocr.continueManual,
             role: 'cancel',
-            handler: () => ocr.clearError(),
+            handler: () => {
+              ocr.clearError()
+              setOcrFeedback(strings.ocr.attachedWithoutPrefill)
+            },
           },
           {
             text: strings.ocr.retry,

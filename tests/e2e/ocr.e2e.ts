@@ -59,19 +59,20 @@ async function openNovaManutencao(page: import('@playwright/test').Page) {
   await page.getByTestId('veiculo-historico-1').click()
   await page.getByTestId('manutencao-empty-cta').click()
   await expect(page.getByTestId('manutencao-form')).toBeVisible()
-  await expect(page.getByTestId('ocr-section')).toBeVisible()
+  await expect(page.getByTestId('anexos-section')).toBeVisible()
 }
 
 test.describe('OCR', () => {
-  test('deve anexar fluxo OCR → revisar → salvar', async ({ page }) => {
+  test('deve anexar imagem → OCR automático → revisar → salvar', async ({ page }) => {
     await gotoWithOcrMock(page, { acked: true })
     await openNovaManutencao(page)
 
-    await page.getByTestId('ocr-image-input').setInputFiles(imageFixture)
+    await page.getByTestId('anexo-photo-input').setInputFiles(imageFixture)
 
     await expect(page.getByTestId('ocr-feedback')).toContainText(strings.ocr.appliedOk, {
       timeout: 15_000,
     })
+    await expect(page.getByTestId('anexos-list')).toBeVisible()
     await expect(page.getByTestId('manutencao-data').locator('input')).toHaveValue('2026-01-15')
     await expect(page.getByTestId('manutencao-km').locator('input')).toHaveValue('40000')
     await expect(page.getByTestId('manutencao-tipo-servico').locator('input')).toHaveValue(
@@ -86,19 +87,25 @@ test.describe('OCR', () => {
 
     await expect(page.getByTestId('manutencoes-list')).toBeVisible()
     await expect(page.getByTestId('manutencao-tipo-1')).toHaveText('Troca de óleo (revisado)')
+
+    await page.getByTestId('manutencao-edit-1').click()
+    await expect(page.getByTestId('anexos-list')).toBeVisible()
   })
 
-  test('deve permitir salvar manualmente quando OCR falha', async ({ page }) => {
+  test('deve permitir salvar manualmente quando OCR falha (anexo permanece)', async ({ page }) => {
     await gotoWithOcrMock(page, { fail: true, acked: true })
     await openNovaManutencao(page)
 
-    await page.getByTestId('ocr-image-input').setInputFiles(imageFixture)
+    await page.getByTestId('anexo-photo-input').setInputFiles(imageFixture)
 
     await expect(page.getByLabel(strings.ocr.title)).toBeVisible({ timeout: 15_000 })
     await page
       .getByLabel(strings.ocr.title)
       .getByRole('button', { name: strings.ocr.continueManual })
       .click()
+
+    await expect(page.getByTestId('ocr-feedback')).toContainText(strings.ocr.attachedWithoutPrefill)
+    await expect(page.getByTestId('anexos-list')).toBeVisible()
 
     await page.getByTestId('manutencao-data').locator('input').fill('2026-02-10')
     await page.getByTestId('manutencao-km').locator('input').fill('41000')
@@ -107,5 +114,8 @@ test.describe('OCR', () => {
 
     await expect(page.getByTestId('manutencoes-list')).toBeVisible()
     await expect(page.getByTestId('manutencao-tipo-1')).toHaveText('Manual após falha')
+
+    await page.getByTestId('manutencao-edit-1').click()
+    await expect(page.getByTestId('anexos-list')).toBeVisible()
   })
 })

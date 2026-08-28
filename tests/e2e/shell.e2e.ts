@@ -10,7 +10,6 @@ test.describe('shell Ionic na rota raiz', () => {
     await expect(page.locator('ion-app div.ion-page')).toBeVisible()
     await expect(page.locator('ion-header')).toBeVisible()
     await expect(page.getByText(strings.home.title)).toBeVisible()
-    await expect(page.getByText(strings.home.subtitle)).toBeVisible()
   })
 
   test('deve navegar pelas tabs em viewport mobile e reservar ads fora do cadastro', async ({
@@ -22,6 +21,7 @@ test.describe('shell Ionic na rota raiz', () => {
     await acceptOnboardingAndCreateCofre(page)
 
     await expect(page.getByTestId('app-tab-bar')).toBeVisible()
+    await expect(page.getByTestId('tab-cofre')).toHaveCount(0)
     await expect(page.getByTestId('ads-banner-placeholder')).toBeVisible()
     await expect(page.getByTestId('ads-banner-placeholder')).toHaveText(
       strings.shell.adsPlaceholder,
@@ -36,6 +36,7 @@ test.describe('shell Ionic na rota raiz', () => {
 
     await openTab(page, 'config')
     await expect(page.getByTestId('tab-panel-config')).toBeVisible()
+    await expect(page.getByTestId('cofre-export')).toBeVisible()
 
     await openTab(page, 'veiculos')
     await page.getByTestId('veiculo-empty-cta').click()
