@@ -7,7 +7,7 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/react'
-import { TERMO_ISENCAO_PARAGRAFOS, TERMO_ISENCAO_TITULO } from '../../shared/legal'
+import { TERMO_ISENCAO_PARAGRAFOS } from '../../shared/legal'
 import { strings } from '../../shared/i18n'
 
 export interface TermoModalProps {
@@ -26,7 +26,7 @@ export function TermoModal({ isOpen, onClose }: TermoModalProps) {
     >
       <IonHeader>
         <IonToolbar>
-          <IonTitle>{TERMO_ISENCAO_TITULO}</IonTitle>
+          <IonTitle>{strings.termo.modalTitle}</IonTitle>
           <IonButtons slot="end">
             <IonButton data-testid="termo-modal-close" onClick={onClose}>
               {strings.termo.close}
@@ -35,7 +35,7 @@ export function TermoModal({ isOpen, onClose }: TermoModalProps) {
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
-        <div data-testid="termo-modal-body">
+        <div data-testid="termo-modal-body" className="hvcf-termo-scroll hvcf-termo-scroll--modal">
           {TERMO_ISENCAO_PARAGRAFOS.map((paragraph) => (
             <p key={paragraph.slice(0, 24)}>{paragraph}</p>
           ))}

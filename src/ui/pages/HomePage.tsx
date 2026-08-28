@@ -11,7 +11,7 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/react'
-import { chevronBack } from 'ionicons/icons'
+import { carOutline, chevronBack } from 'ionicons/icons'
 import { strings } from '../../shared/i18n'
 import { isMinimumBrowserSupported } from '../../shared/browser/isMinimumBrowserSupported'
 import type { Manutencao, Veiculo } from '../../domain'
@@ -21,10 +21,13 @@ import { useCofre } from '../hooks/useCofre'
 import { useManutencoes } from '../hooks/useManutencoes'
 import { useRelatorio } from '../hooks/useRelatorio'
 import { useVeiculos } from '../hooks/useVeiculos'
+import { AjustesBackupPanel } from '../ajustes/AjustesBackupPanel'
+import { EmptyState } from '../components/EmptyState'
+import { FeedbackToast } from '../components/FeedbackToast'
 import { ManutencaoForm } from '../manutencoes/ManutencaoForm'
 import { ManutencoesList } from '../manutencoes/ManutencoesList'
 import { BackupReminderBanner, OnboardingFlow, TermoGate, TermoModal } from '../onboarding'
-import { AppShellFooter, BrowserUnsupportedGate, type AppTabId } from '../shell'
+import { AppShellFooter, BrowserUnsupportedGate, CofreLoadingGate, type AppTabId } from '../shell'
 import { VeiculoForm } from '../veiculos/VeiculoForm'
 import { VeiculosList } from '../veiculos/VeiculosList'
 
@@ -152,6 +155,7 @@ export function HomePage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const pendingFileRef = useRef<File | null>(null)
+  const manutencaoBackHandlerRef = useRef<(() => boolean) | null>(null)
   const [replaceAlertOpen, setReplaceAlertOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
@@ -209,6 +213,7 @@ export function HomePage() {
 
   function handleHeaderBack() {
     if (view.kind === 'manutencao-form') {
+      if (manutencaoBackHandlerRef.current?.()) return
       clearPending()
       setView({ kind: 'manutencoes', veiculoId: view.veiculoId })
       return
@@ -295,7 +300,7 @@ export function HomePage() {
         </IonHeader>
       )}
       <IonContent className="ion-padding">
-        {status === 'loading' && <p>{strings.cofre.openWorking}</p>}
+        {status === 'loading' && <CofreLoadingGate />}
 
         {status === 'error' && errorMessage && (
           <IonText color="danger">
@@ -309,89 +314,37 @@ export function HomePage() {
 
         {backupBannerNode && !isVeiculosHome && backupBannerNode}
 
-        {showCofreUi && feedbackMessage && (
-          <IonText color="success">
-            <p data-testid="cofre-message">{feedbackMessage}</p>
-          </IonText>
+        {showCofreUi && (
+          <FeedbackToast
+            message={feedbackError && status === 'ready' ? null : feedbackMessage}
+            variant="success"
+            testId="cofre-message"
+          />
         )}
 
-        {showCofreUi && feedbackError && status === 'ready' && (
-          <IonText color="danger">
-            <p data-testid="cofre-error">{feedbackError}</p>
-          </IonText>
+        {showCofreUi && status === 'ready' && (
+          <FeedbackToast message={feedbackError} variant="error" testId="cofre-error" />
         )}
 
         {showCofreUi && tab === 'config' && (
-          <section data-testid="tab-panel-config">
-            <h2>{strings.shell.configTitle}</h2>
-            <p>{strings.shell.configSubtitle}</p>
-            <p>{strings.cofre.subtitle}</p>
-
-            {!session && <p>{strings.cofre.emptyState}</p>}
-
-            {session && meta && (
-              <div data-testid="cofre-meta">
-                <p>
-                  {strings.cofre.contentVersion}:{' '}
-                  <strong data-testid="cofre-content-version">{meta.contentVersion}</strong>
-                </p>
-                <p>
-                  {strings.cofre.modifiedAt}:{' '}
-                  <span data-testid="cofre-modified-at">{formatModifiedAt(meta.modifiedAt)}</span>
-                </p>
-              </div>
-            )}
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <IonButton
-                data-testid="cofre-create"
-                onClick={() => {
-                  void handleCreateCofre()
-                }}
-              >
-                {strings.cofre.create}
-              </IonButton>
-
-              <IonButton
-                data-testid="cofre-import"
-                fill="outline"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {strings.cofre.import}
-              </IonButton>
-
-              <IonButton
-                data-testid="cofre-export"
-                fill="outline"
-                disabled={!session}
-                onClick={() => {
-                  void handleExport()
-                }}
-              >
-                {strings.cofre.export}
-              </IonButton>
-
-              <IonButton
-                data-testid="termo-open"
-                fill="clear"
-                size="small"
-                onClick={() => setTermoModalOpen(true)}
-              >
-                {strings.termo.open}
-              </IonButton>
-            </div>
-
-            <input
-              ref={fileInputRef}
-              data-testid="cofre-import-input"
-              type="file"
-              accept=".cofre,application/octet-stream"
-              hidden
-              onChange={(event) => {
-                void handleImportChange(event.target.files)
-              }}
-            />
-          </section>
+          <AjustesBackupPanel
+            session={session}
+            meta={meta}
+            lastBackupAt={prefs.lastBackupAt}
+            fileInputRef={fileInputRef}
+            formatModifiedAt={formatModifiedAt}
+            onCreate={() => {
+              void handleCreateCofre()
+            }}
+            onImportClick={() => fileInputRef.current?.click()}
+            onExport={() => {
+              void handleExport()
+            }}
+            onOpenTermo={() => setTermoModalOpen(true)}
+            onImportChange={(files) => {
+              void handleImportChange(files)
+            }}
+          />
         )}
 
         {showCofreUi &&
@@ -477,6 +430,8 @@ export function HomePage() {
             ) : view.kind === 'manutencao-form' ? (
               <ManutencaoForm
                 veiculoId={view.veiculoId}
+                veiculoPlaca={detalheVeiculo?.placa}
+                veiculoMarcaModelo={detalheVeiculo?.marcaModelo}
                 initial={editingManutencao}
                 submitting={submitting}
                 anexos={anexos}
@@ -486,6 +441,7 @@ export function HomePage() {
                 confirmPreparedAnexo={confirmPreparedAnexo}
                 loadAnexoBytes={loadAnexoBytes}
                 removeAnexo={removeAnexo}
+                backHandlerRef={manutencaoBackHandlerRef}
                 onCancel={() => {
                   clearPending()
                   setView({ kind: 'manutencoes', veiculoId: view.veiculoId })
@@ -516,9 +472,15 @@ export function HomePage() {
                 }}
               />
             ) : (
-              <p className="hvcf-pick-veiculo" data-testid="manutencoes-pick-veiculo">
-                {strings.shell.manutencoesPickVeiculo}
-              </p>
+              <EmptyState
+                icon={carOutline}
+                title={strings.shell.manutencoesPickVeiculoTitle}
+                body={strings.shell.manutencoesPickVeiculo}
+                testId="manutencoes-pick-veiculo"
+                actionLabel={strings.shell.manutencoesPickVeiculoCta}
+                actionTestId="manutencoes-pick-veiculos-cta"
+                onAction={() => setTab('veiculos')}
+              />
             )}
           </div>
         )}

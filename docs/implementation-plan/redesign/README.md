@@ -17,4 +17,4 @@ Já entregues (fora desta pasta):
 - [design-system-home-veiculos](/docs/implementation-plan/design-system-home-veiculos.md)
 - [ui-manutencoes-historico](/docs/implementation-plan/ui-manutencoes-historico.md)
 
-Próximo a executar: **ui-manutencao-form**.
+Próximo a executar: _(redesign desta pasta concluído — ver checklists em cada plano)._

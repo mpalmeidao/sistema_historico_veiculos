@@ -40,12 +40,14 @@ function toFormState(veiculo: Veiculo | null): FormState {
   }
 }
 
+function requiredLabel(label: string): string {
+  return `${label} (${strings.veiculos.requiredHint})`
+}
+
 export function VeiculoForm({ initial, onSubmit, onCancel, submitting = false }: VeiculoFormProps) {
   const [form, setForm] = useState<FormState>(() => toFormState(initial))
   const [touched, setTouched] = useState<Partial<Record<VeiculoField, boolean>>>({})
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<VeiculoField, string>>>({})
-
-  const title = initial ? strings.veiculos.editTitle : strings.veiculos.createTitle
 
   const invalidClass = useMemo(() => {
     return (field: VeiculoField): string => {
@@ -87,83 +89,94 @@ export function VeiculoForm({ initial, onSubmit, onCancel, submitting = false }:
   }
 
   return (
-    <section data-testid="veiculo-form">
-      <h2>{title}</h2>
-      <IonList>
-        <IonItem>
-          <IonInput
-            data-testid="veiculo-placa"
-            label={strings.veiculos.placa}
-            labelPlacement="stacked"
-            value={form.placa}
-            className={invalidClass('placa')}
-            errorText={fieldErrors.placa}
-            onIonInput={(event) => updateField('placa', event.detail.value ?? '')}
-            onIonBlur={() => setTouched((t) => ({ ...t, placa: true }))}
-          />
-        </IonItem>
-        <IonItem>
-          <IonInput
-            data-testid="veiculo-marca-modelo"
-            label={strings.veiculos.marcaModelo}
-            labelPlacement="stacked"
-            value={form.marcaModelo}
-            className={invalidClass('marcaModelo')}
-            errorText={fieldErrors.marcaModelo}
-            onIonInput={(event) => updateField('marcaModelo', event.detail.value ?? '')}
-            onIonBlur={() => setTouched((t) => ({ ...t, marcaModelo: true }))}
-          />
-        </IonItem>
-        <IonItem>
-          <IonInput
-            data-testid="veiculo-ano-modelo"
-            label={strings.veiculos.anoModelo}
-            labelPlacement="stacked"
-            type="number"
-            inputMode="numeric"
-            value={form.anoModelo}
-            className={invalidClass('anoModelo')}
-            errorText={fieldErrors.anoModelo}
-            onIonInput={(event) => updateField('anoModelo', event.detail.value ?? '')}
-            onIonBlur={() => setTouched((t) => ({ ...t, anoModelo: true }))}
-          />
-        </IonItem>
-        <IonItem>
-          <IonInput
-            data-testid="veiculo-km-atual"
-            label={strings.veiculos.kmAtual}
-            labelPlacement="stacked"
-            type="number"
-            inputMode="numeric"
-            value={form.kmAtual}
-            className={invalidClass('kmAtual')}
-            errorText={fieldErrors.kmAtual}
-            onIonInput={(event) => updateField('kmAtual', event.detail.value ?? '')}
-            onIonBlur={() => setTouched((t) => ({ ...t, kmAtual: true }))}
-          />
-        </IonItem>
-        <IonItem>
-          <IonInput
-            data-testid="veiculo-proxima-troca"
-            label={strings.veiculos.proximaTroca}
-            labelPlacement="stacked"
-            value={form.proximaTroca}
-            onIonInput={(event) => updateField('proximaTroca', event.detail.value ?? '')}
-          />
-        </IonItem>
-      </IonList>
+    <section data-testid="veiculo-form" className="hvcf-veiculo-form">
+      <div>
+        <h3 className="hvcf-veiculo-form__section-title">
+          {strings.veiculos.sectionIdentificacao}
+        </h3>
+        <IonList>
+          <IonItem>
+            <IonInput
+              data-testid="veiculo-placa"
+              label={requiredLabel(strings.veiculos.placa)}
+              labelPlacement="stacked"
+              value={form.placa}
+              className={invalidClass('placa')}
+              errorText={fieldErrors.placa}
+              onIonInput={(event) => updateField('placa', event.detail.value ?? '')}
+              onIonBlur={() => setTouched((t) => ({ ...t, placa: true }))}
+            />
+          </IonItem>
+          <IonItem>
+            <IonInput
+              data-testid="veiculo-marca-modelo"
+              label={requiredLabel(strings.veiculos.marcaModelo)}
+              labelPlacement="stacked"
+              value={form.marcaModelo}
+              className={invalidClass('marcaModelo')}
+              errorText={fieldErrors.marcaModelo}
+              onIonInput={(event) => updateField('marcaModelo', event.detail.value ?? '')}
+              onIonBlur={() => setTouched((t) => ({ ...t, marcaModelo: true }))}
+            />
+          </IonItem>
+          <IonItem>
+            <IonInput
+              data-testid="veiculo-ano-modelo"
+              label={strings.veiculos.anoModelo}
+              labelPlacement="stacked"
+              type="number"
+              inputMode="numeric"
+              value={form.anoModelo}
+              className={invalidClass('anoModelo')}
+              errorText={fieldErrors.anoModelo}
+              onIonInput={(event) => updateField('anoModelo', event.detail.value ?? '')}
+              onIonBlur={() => setTouched((t) => ({ ...t, anoModelo: true }))}
+            />
+          </IonItem>
+        </IonList>
+      </div>
+
+      <div>
+        <h3 className="hvcf-veiculo-form__section-title">{strings.veiculos.sectionUso}</h3>
+        <IonList>
+          <IonItem>
+            <IonInput
+              data-testid="veiculo-km-atual"
+              label={requiredLabel(strings.veiculos.kmAtual)}
+              labelPlacement="stacked"
+              type="number"
+              inputMode="numeric"
+              value={form.kmAtual}
+              className={invalidClass('kmAtual')}
+              errorText={fieldErrors.kmAtual}
+              onIonInput={(event) => updateField('kmAtual', event.detail.value ?? '')}
+              onIonBlur={() => setTouched((t) => ({ ...t, kmAtual: true }))}
+            />
+          </IonItem>
+          <IonItem>
+            <IonInput
+              data-testid="veiculo-proxima-troca"
+              label={strings.veiculos.proximaTroca}
+              labelPlacement="stacked"
+              value={form.proximaTroca}
+              onIonInput={(event) => updateField('proximaTroca', event.detail.value ?? '')}
+            />
+          </IonItem>
+        </IonList>
+      </div>
 
       {Object.keys(fieldErrors).length > 0 && (
         <IonText color="danger">
-          <IonNote color="danger" data-testid="veiculo-form-errors">
+          <IonNote color="danger" data-testid="veiculo-form-errors" role="alert">
             {Object.values(fieldErrors).join(' ')}
           </IonNote>
         </IonText>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
+      <div className="hvcf-veiculo-form__actions">
         <IonButton
           data-testid="veiculo-salvar"
+          className="hvcf-veiculo-form__cta"
           disabled={submitting}
           onClick={() => {
             void handleSubmit()
@@ -173,6 +186,7 @@ export function VeiculoForm({ initial, onSubmit, onCancel, submitting = false }:
         </IonButton>
         <IonButton
           data-testid="veiculo-cancelar"
+          className="hvcf-veiculo-form__cta--secondary"
           fill="outline"
           disabled={submitting}
           onClick={onCancel}

@@ -97,9 +97,11 @@ test.describe('veículos', () => {
 
     await page.getByTestId('veiculo-historico-1').click()
     await page.getByTestId('manutencao-empty-cta').click()
+    await page.getByTestId('manutencao-continuar').click()
     await page.getByTestId('manutencao-data').locator('input').fill('2026-02-01')
     await page.getByTestId('manutencao-km').locator('input').fill('4800')
     await page.getByTestId('manutencao-tipo-servico').locator('input').fill('Revisão')
+    await page.getByTestId('manutencao-continuar').click()
     await page.getByTestId('manutencao-salvar').click()
     await expect(page.getByTestId('manutencoes-list')).toBeVisible()
 

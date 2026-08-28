@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react'
 import { IonAlert, IonButton, IonInput, IonItem, IonList, IonNote, IonText } from '@ionic/react'
 import type {
   Manutencao,
@@ -16,14 +16,28 @@ import { AnexosSection } from '../anexos/AnexosSection'
 import type { UseAnexosResult } from '../hooks/useAnexos'
 import { useOcr, type OcrRunOutcome } from '../hooks/useOcr'
 import { fieldErrorsMap } from './fieldErrorMessages'
+import {
+  nextWizardStep,
+  prevWizardStep,
+  wizardStepForFieldErrors,
+  type ManutencaoWizardStep,
+} from './wizardSteps'
 
 export interface ManutencaoFormProps {
   veiculoId: number
+  /** Contexto do veículo exibido no formulário (placa · marca/modelo). */
+  veiculoPlaca?: string
+  veiculoMarcaModelo?: string
   initial: Manutencao | null
   onSubmit: (
     raw: ManutencaoRawInput,
   ) => Promise<{ ok: true; id: number } | { ok: false; fieldErrors: ManutencaoFieldError[] }>
   onCancel: () => void
+  /**
+   * Ref preenchida pelo form: retorna `true` se o voltar do header foi consumido
+   * (etapa anterior); `false` se o pai deve cancelar o fluxo (etapa 1).
+   */
+  backHandlerRef?: MutableRefObject<(() => boolean) | null>
   submitting?: boolean
   anexos: UseAnexosResult['anexos']
   anexosProcessing: boolean
@@ -75,11 +89,26 @@ function sumPecasPreview(pecas: PecaFormItem[]): number | null {
   return hasAny ? total : null
 }
 
+function progressLabel(step: ManutencaoWizardStep): string {
+  return strings.manutencoes.progressLabel
+    .replace('{{current}}', String(step))
+    .replace('{{total}}', '3')
+}
+
+function stepTitle(step: ManutencaoWizardStep): string {
+  if (step === 1) return strings.manutencoes.stepComprovanteTitle
+  if (step === 2) return strings.manutencoes.stepDadosTitle
+  return strings.manutencoes.stepPecasTitle
+}
+
 export function ManutencaoForm({
   veiculoId,
+  veiculoPlaca,
+  veiculoMarcaModelo,
   initial,
   onSubmit,
   onCancel,
+  backHandlerRef,
   submitting = false,
   anexos,
   anexosProcessing,
@@ -90,14 +119,35 @@ export function ManutencaoForm({
   removeAnexo,
 }: ManutencaoFormProps) {
   const [form, setForm] = useState<FormState>(() => toFormState(initial))
+  const [step, setStep] = useState<ManutencaoWizardStep>(1)
   const [touched, setTouched] = useState<Partial<Record<ManutencaoField, boolean>>>({})
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<ManutencaoField, string>>>({})
   const [ocrFeedback, setOcrFeedback] = useState<string | null>(null)
   const pendingOcrBytesRef = useRef<Uint8Array | null>(null)
+  const stepTitleRef = useRef<HTMLHeadingElement>(null)
   const ocr = useOcr()
 
-  const title = initial ? strings.manutencoes.editTitle : strings.manutencoes.createTitle
   const valorTotal = sumPecasPreview(form.pecas)
+  const valorDisplay =
+    valorTotal === null
+      ? strings.manutencoes.valorTotalEmpty
+      : valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
+  useEffect(() => {
+    if (!backHandlerRef) return
+    backHandlerRef.current = () => {
+      if (step <= 1) return false
+      setStep(prevWizardStep(step))
+      return true
+    }
+    return () => {
+      backHandlerRef.current = null
+    }
+  }, [backHandlerRef, step])
+
+  useEffect(() => {
+    stepTitleRef.current?.focus()
+  }, [step])
 
   const invalidClass = useMemo(() => {
     return (field: ManutencaoField): string => {
@@ -172,6 +222,10 @@ export function ManutencaoForm({
     void runOcrOnBytes(prepared.bytes)
   }
 
+  function goContinue() {
+    setStep(nextWizardStep(step))
+  }
+
   async function handleSubmit() {
     setTouched({
       data: true,
@@ -194,7 +248,9 @@ export function ManutencaoForm({
 
     const result = await onSubmit(raw)
     if (result.ok === false) {
-      setFieldErrors(fieldErrorsMap(result.fieldErrors))
+      const map = fieldErrorsMap(result.fieldErrors)
+      setFieldErrors(map)
+      setStep(wizardStepForFieldErrors(Object.keys(map) as ManutencaoField[]))
       return
     }
     setFieldErrors({})
@@ -206,198 +262,268 @@ export function ManutencaoForm({
     ocr.errorCode === 'MODEL_DOWNLOAD_FAILED' ? strings.ocr.modelDownloadFailed : strings.ocr.failed
 
   return (
-    <section data-testid="manutencao-form">
-      <h2>{title}</h2>
-
-      <AnexosSection
-        anexos={anexos}
-        processing={anexosProcessing}
-        errorMessage={anexosError}
-        attachFile={attachFile}
-        confirmPreparedAnexo={confirmPreparedAnexo}
-        loadAnexoBytes={loadAnexoBytes}
-        removeAnexo={removeAnexo}
-        onAttached={handleAttached}
-        disabled={submitting || ocr.status === 'processing'}
-      />
-
-      {ocr.status === 'processing' && (
-        <div
-          data-testid="ocr-processing-block"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.25rem',
-            marginBottom: '0.75rem',
-          }}
-        >
-          <IonNote data-testid="ocr-processing">{strings.ocr.processing}</IonNote>
-          <IonButton data-testid="ocr-cancel" size="small" fill="clear" onClick={ocr.cancel}>
-            {strings.ocr.cancel}
-          </IonButton>
+    <section data-testid="manutencao-form" className="hvcf-wizard">
+      {(veiculoPlaca || veiculoMarcaModelo) && (
+        <div className="hvcf-wizard__context" data-testid="manutencao-veiculo-context">
+          {veiculoPlaca && <span className="hvcf-wizard__context-placa">{veiculoPlaca}</span>}
+          {veiculoPlaca && veiculoMarcaModelo && <span aria-hidden="true">·</span>}
+          {veiculoMarcaModelo && (
+            <span className="hvcf-wizard__context-marca">{veiculoMarcaModelo}</span>
+          )}
         </div>
       )}
-      {ocrFeedback && (
-        <IonNote
-          data-testid="ocr-feedback"
-          color="medium"
-          style={{ display: 'block', marginBottom: '0.75rem' }}
-        >
-          {ocrFeedback}
-        </IonNote>
-      )}
 
-      <IonList>
-        <IonItem>
-          <IonInput
-            data-testid="manutencao-data"
-            label={strings.manutencoes.data}
-            labelPlacement="stacked"
-            type="date"
-            value={form.data}
-            className={invalidClass('data')}
-            errorText={fieldErrors.data}
-            onIonInput={(event) => updateField('data', event.detail.value ?? '')}
-            onIonBlur={() => setTouched((t) => ({ ...t, data: true }))}
-          />
-        </IonItem>
-        <IonItem>
-          <IonInput
-            data-testid="manutencao-km"
-            label={strings.manutencoes.km}
-            labelPlacement="stacked"
-            type="number"
-            inputMode="numeric"
-            value={form.km}
-            className={invalidClass('km')}
-            errorText={fieldErrors.km}
-            onIonInput={(event) => updateField('km', event.detail.value ?? '')}
-            onIonBlur={() => setTouched((t) => ({ ...t, km: true }))}
-          />
-        </IonItem>
-        <IonItem>
-          <IonInput
-            data-testid="manutencao-tipo-servico"
-            label={strings.manutencoes.tipoServico}
-            labelPlacement="stacked"
-            value={form.tipoServico}
-            className={invalidClass('tipoServico')}
-            errorText={fieldErrors.tipoServico}
-            onIonInput={(event) => updateField('tipoServico', event.detail.value ?? '')}
-            onIonBlur={() => setTouched((t) => ({ ...t, tipoServico: true }))}
-          />
-        </IonItem>
+      <div
+        className="hvcf-wizard__progress"
+        data-testid="manutencao-wizard-progress"
+        role="group"
+        aria-label={progressLabel(step)}
+      >
+        <p className="hvcf-wizard__progress-label" data-testid="manutencao-wizard-progress-label">
+          {progressLabel(step)}
+        </p>
+        <div className="hvcf-wizard__progress-track" aria-hidden="true">
+          {([1, 2, 3] as const).map((dot) => (
+            <span
+              key={dot}
+              className={[
+                'hvcf-wizard__progress-dot',
+                dot === step ? 'hvcf-wizard__progress-dot--active' : '',
+                dot < step ? 'hvcf-wizard__progress-dot--done' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            />
+          ))}
+        </div>
+      </div>
 
-        <IonItem lines="none">
-          <IonNote slot="start">{strings.manutencoes.pecasTrocadas}</IonNote>
-        </IonItem>
-        {form.pecas.map((peca, index) => (
-          <div key={index} data-testid={`manutencao-peca-${index}`}>
+      <h2
+        ref={stepTitleRef}
+        className="hvcf-wizard__step-title"
+        data-testid="manutencao-wizard-step-title"
+        tabIndex={-1}
+        aria-current="step"
+      >
+        {stepTitle(step)}
+      </h2>
+
+      <div key={step} className="hvcf-wizard__panel" data-testid={`manutencao-wizard-step-${step}`}>
+        {step === 1 && (
+          <>
+            <AnexosSection
+              hideTitle
+              anexos={anexos}
+              processing={anexosProcessing}
+              errorMessage={anexosError}
+              attachFile={attachFile}
+              confirmPreparedAnexo={confirmPreparedAnexo}
+              loadAnexoBytes={loadAnexoBytes}
+              removeAnexo={removeAnexo}
+              onAttached={handleAttached}
+              disabled={submitting || ocr.status === 'processing'}
+            />
+
+            {ocr.status === 'processing' && (
+              <div className="hvcf-ocr-status" data-testid="ocr-processing-block">
+                <IonNote data-testid="ocr-processing" role="status" aria-live="polite">
+                  {strings.ocr.processing}
+                </IonNote>
+                <IonButton data-testid="ocr-cancel" size="small" fill="clear" onClick={ocr.cancel}>
+                  {strings.ocr.cancel}
+                </IonButton>
+              </div>
+            )}
+            {ocrFeedback && (
+              <IonNote
+                data-testid="ocr-feedback"
+                color="medium"
+                className="hvcf-ocr-feedback"
+                role="status"
+                aria-live="polite"
+              >
+                {ocrFeedback}
+              </IonNote>
+            )}
+          </>
+        )}
+
+        {step === 2 && (
+          <IonList>
             <IonItem>
               <IonInput
-                data-testid={`manutencao-peca-descricao-${index}`}
-                label={strings.manutencoes.pecaDescricao}
+                data-testid="manutencao-data"
+                label={strings.manutencoes.data}
                 labelPlacement="stacked"
-                value={peca.descricao}
-                className={invalidClass('pecasTrocadas')}
-                onIonInput={(event) => updatePeca(index, { descricao: event.detail.value ?? '' })}
-                onIonBlur={() => setTouched((t) => ({ ...t, pecasTrocadas: true }))}
+                type="date"
+                value={form.data}
+                className={invalidClass('data')}
+                errorText={fieldErrors.data}
+                onIonInput={(event) => updateField('data', event.detail.value ?? '')}
+                onIonBlur={() => setTouched((t) => ({ ...t, data: true }))}
               />
             </IonItem>
             <IonItem>
               <IonInput
-                data-testid={`manutencao-peca-valor-${index}`}
-                label={strings.manutencoes.pecaValor}
+                data-testid="manutencao-km"
+                label={strings.manutencoes.km}
                 labelPlacement="stacked"
                 type="number"
-                inputMode="decimal"
-                value={peca.valor}
-                className={invalidClass('pecasTrocadas')}
-                onIonInput={(event) => updatePeca(index, { valor: event.detail.value ?? '' })}
-                onIonBlur={() => setTouched((t) => ({ ...t, pecasTrocadas: true }))}
+                inputMode="numeric"
+                value={form.km}
+                className={invalidClass('km')}
+                errorText={fieldErrors.km}
+                onIonInput={(event) => updateField('km', event.detail.value ?? '')}
+                onIonBlur={() => setTouched((t) => ({ ...t, km: true }))}
               />
             </IonItem>
-            <IonButton
-              data-testid={`manutencao-peca-remover-${index}`}
-              size="small"
-              fill="clear"
-              color="medium"
-              onClick={() => removePeca(index)}
-            >
-              {strings.manutencoes.pecaRemove}
-            </IonButton>
-          </div>
-        ))}
-        {fieldErrors.pecasTrocadas && (
-          <IonNote color="danger" data-testid="manutencao-pecas-error">
-            {fieldErrors.pecasTrocadas}
-          </IonNote>
+            <IonItem>
+              <IonInput
+                data-testid="manutencao-tipo-servico"
+                label={strings.manutencoes.tipoServico}
+                labelPlacement="stacked"
+                value={form.tipoServico}
+                className={invalidClass('tipoServico')}
+                errorText={fieldErrors.tipoServico}
+                onIonInput={(event) => updateField('tipoServico', event.detail.value ?? '')}
+                onIonBlur={() => setTouched((t) => ({ ...t, tipoServico: true }))}
+              />
+            </IonItem>
+            <IonItem>
+              <IonInput
+                data-testid="manutencao-oficina"
+                label={strings.manutencoes.oficina}
+                labelPlacement="stacked"
+                value={form.oficina}
+                onIonInput={(event) => updateField('oficina', event.detail.value ?? '')}
+              />
+            </IonItem>
+            <IonItem>
+              <IonInput
+                data-testid="manutencao-proxima-revisao"
+                label={strings.manutencoes.proximaRevisao}
+                labelPlacement="stacked"
+                value={form.proximaRevisao}
+                onIonInput={(event) => updateField('proximaRevisao', event.detail.value ?? '')}
+              />
+            </IonItem>
+          </IonList>
         )}
-        <IonButton data-testid="manutencao-peca-add" size="small" fill="outline" onClick={addPeca}>
-          {strings.manutencoes.pecaAdd}
-        </IonButton>
 
-        <IonItem>
-          <IonInput
-            data-testid="manutencao-valor"
-            label={strings.manutencoes.valorTotal}
-            labelPlacement="stacked"
-            readonly
-            value={
-              valorTotal === null
-                ? ''
-                : valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-            }
-          />
-        </IonItem>
-        <IonNote data-testid="manutencao-valor-hint">{strings.manutencoes.valorTotalHint}</IonNote>
+        {step === 3 && (
+          <>
+            <IonList>
+              <IonItem lines="none">
+                <IonNote slot="start">{strings.manutencoes.pecasTrocadas}</IonNote>
+              </IonItem>
+              {form.pecas.map((peca, index) => (
+                <div key={index} data-testid={`manutencao-peca-${index}`}>
+                  <IonItem>
+                    <IonInput
+                      data-testid={`manutencao-peca-descricao-${index}`}
+                      label={strings.manutencoes.pecaDescricao}
+                      labelPlacement="stacked"
+                      value={peca.descricao}
+                      className={invalidClass('pecasTrocadas')}
+                      onIonInput={(event) =>
+                        updatePeca(index, { descricao: event.detail.value ?? '' })
+                      }
+                      onIonBlur={() => setTouched((t) => ({ ...t, pecasTrocadas: true }))}
+                    />
+                  </IonItem>
+                  <IonItem>
+                    <IonInput
+                      data-testid={`manutencao-peca-valor-${index}`}
+                      label={strings.manutencoes.pecaValor}
+                      labelPlacement="stacked"
+                      type="number"
+                      inputMode="decimal"
+                      value={peca.valor}
+                      className={invalidClass('pecasTrocadas')}
+                      onIonInput={(event) => updatePeca(index, { valor: event.detail.value ?? '' })}
+                      onIonBlur={() => setTouched((t) => ({ ...t, pecasTrocadas: true }))}
+                    />
+                  </IonItem>
+                  <IonButton
+                    data-testid={`manutencao-peca-remover-${index}`}
+                    size="small"
+                    fill="clear"
+                    color="medium"
+                    onClick={() => removePeca(index)}
+                  >
+                    {strings.manutencoes.pecaRemove}
+                  </IonButton>
+                </div>
+              ))}
+              {fieldErrors.pecasTrocadas && (
+                <IonNote color="danger" data-testid="manutencao-pecas-error">
+                  {fieldErrors.pecasTrocadas}
+                </IonNote>
+              )}
+              <IonButton
+                data-testid="manutencao-peca-add"
+                size="small"
+                fill="outline"
+                onClick={addPeca}
+              >
+                {strings.manutencoes.pecaAdd}
+              </IonButton>
+            </IonList>
 
-        <IonItem>
-          <IonInput
-            data-testid="manutencao-oficina"
-            label={strings.manutencoes.oficina}
-            labelPlacement="stacked"
-            value={form.oficina}
-            onIonInput={(event) => updateField('oficina', event.detail.value ?? '')}
-          />
-        </IonItem>
-        <IonItem>
-          <IonInput
-            data-testid="manutencao-proxima-revisao"
-            label={strings.manutencoes.proximaRevisao}
-            labelPlacement="stacked"
-            value={form.proximaRevisao}
-            onIonInput={(event) => updateField('proximaRevisao', event.detail.value ?? '')}
-          />
-        </IonItem>
-      </IonList>
+            <div className="hvcf-total-resumo" data-testid="manutencao-valor-resumo">
+              <p className="hvcf-total-resumo__label">{strings.manutencoes.valorTotal}</p>
+              <p className="hvcf-total-resumo__value" data-testid="manutencao-valor">
+                {valorDisplay}
+              </p>
+              <p className="hvcf-total-resumo__hint" data-testid="manutencao-valor-hint">
+                {strings.manutencoes.valorTotalHint}
+              </p>
+            </div>
+          </>
+        )}
+      </div>
 
       {Object.keys(fieldErrors).length > 0 && (
         <IonText color="danger">
-          <IonNote color="danger" data-testid="manutencao-form-errors">
+          <IonNote color="danger" data-testid="manutencao-form-errors" role="alert">
             {Object.values(fieldErrors).join(' ')}
           </IonNote>
         </IonText>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
-        <IonButton
-          data-testid="manutencao-salvar"
-          disabled={submitting}
-          onClick={() => {
-            void handleSubmit()
-          }}
-        >
-          {strings.manutencoes.save}
-        </IonButton>
-        <IonButton
-          data-testid="manutencao-cancelar"
-          fill="outline"
-          disabled={submitting}
-          onClick={onCancel}
-        >
-          {strings.manutencoes.cancel}
-        </IonButton>
+      <div className="hvcf-wizard__actions">
+        {step < 3 ? (
+          <IonButton
+            data-testid="manutencao-continuar"
+            className="hvcf-wizard__cta"
+            disabled={submitting}
+            onClick={goContinue}
+          >
+            {strings.manutencoes.continue}
+          </IonButton>
+        ) : (
+          <>
+            <IonButton
+              data-testid="manutencao-salvar"
+              className="hvcf-wizard__cta"
+              disabled={submitting}
+              onClick={() => {
+                void handleSubmit()
+              }}
+            >
+              {strings.manutencoes.save}
+            </IonButton>
+            <IonButton
+              data-testid="manutencao-cancelar"
+              className="hvcf-wizard__cta--secondary"
+              fill="outline"
+              disabled={submitting}
+              onClick={onCancel}
+            >
+              {strings.manutencoes.cancel}
+            </IonButton>
+          </>
+        )}
       </div>
 
       <IonAlert

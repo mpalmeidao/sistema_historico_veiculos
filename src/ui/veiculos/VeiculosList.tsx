@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { IonAlert, IonButton, IonIcon, IonText } from '@ionic/react'
+import { IonAlert, IonButton, IonIcon } from '@ionic/react'
 import {
   addOutline,
   carOutline,
@@ -13,6 +13,7 @@ import type { Veiculo } from '../../domain'
 import { buildHomeStats, formatManutencoesCountLabel } from '../../shared/format'
 import { strings } from '../../shared/i18n'
 import { KebabMenu } from '../components/KebabMenu'
+import { EmptyState } from '../components/EmptyState'
 import { HomeStatsStrip } from './HomeStatsStrip'
 
 export interface VeiculosListProps {
@@ -88,15 +89,15 @@ export function VeiculosList({
       {backupBanner}
 
       {veiculos.length === 0 ? (
-        <div className="hvcf-empty" data-testid="veiculos-empty">
-          <IonText>
-            <h3>{strings.veiculos.emptyTitle}</h3>
-            <p>{strings.veiculos.emptyBody}</p>
-          </IonText>
-          <IonButton data-testid="veiculo-empty-cta" expand="block" onClick={onAdd}>
-            {strings.veiculos.emptyCta}
-          </IonButton>
-        </div>
+        <EmptyState
+          icon={carOutline}
+          title={strings.veiculos.emptyTitle}
+          body={strings.veiculos.emptyBody}
+          testId="veiculos-empty"
+          actionLabel={strings.veiculos.emptyCta}
+          actionTestId="veiculo-empty-cta"
+          onAction={onAdd}
+        />
       ) : (
         <ul className="hvcf-veiculo-list" data-testid="veiculos-list">
           {veiculos.map((veiculo) => {

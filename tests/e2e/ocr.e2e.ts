@@ -2,6 +2,11 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { expect, test } from '@playwright/test'
 import { strings } from '../../src/shared/i18n'
+import {
+  fillManutencaoDados,
+  goToManutencaoPecas,
+  wizardContinuar,
+} from './helpers/manutencaoWizard'
 import { acceptOnboardingCreateCofreAndOpenVeiculos } from './helpers/onboarding'
 
 const fixtureDir = path.dirname(fileURLToPath(import.meta.url))
@@ -73,6 +78,8 @@ test.describe('OCR', () => {
       timeout: 15_000,
     })
     await expect(page.getByTestId('anexos-list')).toBeVisible()
+
+    await wizardContinuar(page)
     await expect(page.getByTestId('manutencao-data').locator('input')).toHaveValue('2026-01-15')
     await expect(page.getByTestId('manutencao-km').locator('input')).toHaveValue('40000')
     await expect(page.getByTestId('manutencao-tipo-servico').locator('input')).toHaveValue(
@@ -83,6 +90,7 @@ test.describe('OCR', () => {
       .getByTestId('manutencao-tipo-servico')
       .locator('input')
       .fill('Troca de óleo (revisado)')
+    await goToManutencaoPecas(page)
     await page.getByTestId('manutencao-salvar').click()
 
     await expect(page.getByTestId('manutencoes-list')).toBeVisible()
@@ -108,9 +116,12 @@ test.describe('OCR', () => {
     await expect(page.getByTestId('ocr-feedback')).toContainText(strings.ocr.attachedWithoutPrefill)
     await expect(page.getByTestId('anexos-list')).toBeVisible()
 
-    await page.getByTestId('manutencao-data').locator('input').fill('2026-02-10')
-    await page.getByTestId('manutencao-km').locator('input').fill('41000')
-    await page.getByTestId('manutencao-tipo-servico').locator('input').fill('Manual após falha')
+    await fillManutencaoDados(page, {
+      data: '2026-02-10',
+      km: '41000',
+      tipoServico: 'Manual após falha',
+    })
+    await goToManutencaoPecas(page)
     await page.getByTestId('manutencao-salvar').click()
 
     await expect(page.getByTestId('manutencoes-list')).toBeVisible()

@@ -4,3 +4,4 @@ export { AdsBannerPlaceholder, ADS_BANNER_HEIGHT_PX } from './AdsBannerPlacehold
 export { AppTabBar } from './AppTabBar'
 export { AppShellFooter } from './AppShellFooter'
 export { BrowserUnsupportedGate } from './BrowserUnsupportedGate'
+export { CofreLoadingGate } from './CofreLoadingGate'

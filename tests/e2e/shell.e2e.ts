@@ -9,7 +9,7 @@ test.describe('shell Ionic na rota raiz', () => {
     await expect(page.locator('ion-app')).toBeVisible()
     await expect(page.locator('ion-app div.ion-page')).toBeVisible()
     await expect(page.locator('ion-header')).toBeVisible()
-    await expect(page.getByText(strings.home.title)).toBeVisible()
+    await expect(page.locator('ion-header ion-title')).toHaveText(strings.home.title)
   })
 
   test('deve navegar pelas tabs em viewport mobile e reservar ads fora do cadastro', async ({

@@ -3,6 +3,7 @@ import { IonAlert, IonButton, IonIcon, IonText } from '@ionic/react'
 import {
   addOutline,
   carOutline,
+  constructOutline,
   documentTextOutline,
   speedometerOutline,
   timeOutline,
@@ -11,6 +12,7 @@ import type { Manutencao, Veiculo } from '../../domain'
 import { formatBrl, formatDisplayDate, formatTotalGastoDisplay } from '../../shared/format'
 import { strings } from '../../shared/i18n'
 import { KebabMenu } from '../components/KebabMenu'
+import { EmptyState } from '../components/EmptyState'
 
 export interface ManutencoesListProps {
   veiculo: Veiculo
@@ -152,21 +154,15 @@ export function ManutencoesList({
       ) : null}
 
       {manutencoes.length === 0 ? (
-        <div className="hvcf-empty" data-testid="manutencoes-empty">
-          <IonText>
-            <h3>{strings.manutencoes.emptyTitle}</h3>
-            <p>{strings.manutencoes.emptyBody}</p>
-          </IonText>
-          <IonButton
-            data-testid="manutencao-empty-cta"
-            className="hvcf-historico-cta"
-            expand="block"
-            onClick={onAdd}
-          >
-            <IonIcon slot="start" icon={addOutline} aria-hidden="true" />
-            {strings.manutencoes.emptyCta}
-          </IonButton>
-        </div>
+        <EmptyState
+          icon={constructOutline}
+          title={strings.manutencoes.emptyTitle}
+          body={strings.manutencoes.emptyBody}
+          testId="manutencoes-empty"
+          actionLabel={strings.manutencoes.emptyCta}
+          actionTestId="manutencao-empty-cta"
+          onAction={onAdd}
+        />
       ) : (
         <>
           <ol className="hvcf-timeline" data-testid="manutencoes-list">

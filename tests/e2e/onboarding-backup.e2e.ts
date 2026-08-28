@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { strings } from '../../src/shared/i18n'
 import {
-  acceptOnboarding,
   acceptOnboardingAndCreateCofre,
   acceptOnboardingCreateCofreAndOpenVeiculos,
   BACKUP_REMINDER_EDIT_THRESHOLD,
@@ -14,6 +13,13 @@ test.describe('onboarding e backup', () => {
 
     await expect(page.getByTestId('onboarding')).toBeVisible()
     await expect(page.getByTestId('cofre-create')).toHaveCount(0)
+    await expect(page.getByTestId('onboarding-step-1')).toBeVisible()
+
+    await page.getByTestId('onboarding-continuar').click()
+    await expect(page.getByTestId('onboarding-step-2')).toBeVisible()
+    await page.getByTestId('onboarding-continuar').click()
+    await expect(page.getByTestId('onboarding-step-3')).toBeVisible()
+
     // Ionic usa aria-disabled no host (não o disabled nativo do HTMLButton)
     await expect(page.getByTestId('onboarding-continue')).toHaveAttribute('aria-disabled', 'true')
 
@@ -93,8 +99,13 @@ test.describe('onboarding e backup', () => {
 
   test('onboarding explica gravação automática e dois locais de cópia', async ({ page }) => {
     await page.goto('/')
+    await expect(page.getByTestId('onboarding-step-1')).toBeVisible()
+    await page.getByTestId('onboarding-continuar').click()
     await expect(page.getByText(strings.onboarding.autoSaveTitle)).toBeVisible()
     await expect(page.getByText(strings.onboarding.backupTitle)).toBeVisible()
-    await acceptOnboarding(page)
+    await page.getByTestId('onboarding-continuar').click()
+    await page.getByTestId('onboarding-accept-checkbox').click()
+    await page.getByTestId('onboarding-continue').click()
+    await expect(page.getByTestId('cofre-create')).toBeVisible()
   })
 })

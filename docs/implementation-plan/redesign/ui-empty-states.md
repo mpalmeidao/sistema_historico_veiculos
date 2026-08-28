@@ -1,7 +1,7 @@
 # Implementation Plan: Empty states restantes
 
 **Spec:** [ui-empty-states](/docs/specs/ui-empty-states.md)
-**Status:** pendente
+**Status:** concluído
 **Data:** 2026-08-28
 
 ## Contexto
@@ -16,25 +16,25 @@ Padronizar empty states ainda genéricos (pick de veículo na tab Manutenções;
 
 ### Fase 1: Padrão e pick de veículo
 
-- [ ] **[1.1]** Componente leve `EmptyState` (opcional)
+- [x] **[1.1]** Componente leve `EmptyState` (opcional)
   - _O que fazer:_ se houver ≥2 usos, criar `src/ui/components/EmptyState.tsx` (ícone + título + corpo + CTA opcional) com tokens do DS. Se só um uso novo, pode ficar inline — não abstrair cedo demais.
   - _Critério de conclusão:_ API mínima; sem inventar navegação
 
-- [ ] **[1.2]** Tab Manutenções sem veículo
+- [x] **[1.2]** Tab Manutenções sem veículo
   - _O que fazer:_ substituir mensagem genérica por “Escolha um veículo” + explicação (abrir Veículos → Ver manutenções). CTA opcional “Ir para Veículos” só se trivial no shell. i18n.
   - _Critério de conclusão:_ empty padrão; sem seleção automática de veículo
 
-- [ ] **[1.3]** Empty de cofre ausente + alinhamento fino
+- [x] **[1.3]** Empty de cofre ausente + alinhamento fino
   - _O que fazer:_ garantir empty de Ajustes sem sessão coerente com a spec de Ajustes; ajuste fino tipográfico nos empties de veículos/manutenções/anexos se divergirem do padrão. Não redesenhar copy já aceita das specs anteriores.
   - _Critério de conclusão:_ linguagem visual consistente entre empties
 
 ### Fase 2: E2E e revisão
 
-- [ ] **[2.1]** E2E pick / empty
+- [x] **[2.1]** E2E pick / empty
   - _O que fazer:_ tab Manutenções sem veículo; Ajustes sem cofre se cobertos por testes
   - _Critério de conclusão:_ E2E passando
 
-- [ ] **[2.2]** Critérios de aceite
+- [x] **[2.2]** Critérios de aceite
   - _O que fazer:_ checklist da spec
   - _Critério de conclusão:_ aceite coberto
 

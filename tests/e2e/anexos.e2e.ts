@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { expect, test } from '@playwright/test'
 import { strings } from '../../src/shared/i18n'
+import { fillAndSaveManutencaoMinima } from './helpers/manutencaoWizard'
 import { acceptOnboardingCreateCofreAndOpenVeiculos, openTab } from './helpers/onboarding'
 
 const fixtureDir = path.dirname(fileURLToPath(import.meta.url))
@@ -29,14 +30,16 @@ test.describe('anexos', () => {
     await page.getByTestId('veiculo-historico-1').click()
     await page.getByTestId('manutencao-empty-cta').click()
     await expect(page.getByTestId('anexos-section')).toBeVisible()
+    await expect(page.getByTestId('anexo-add-gallery')).toBeVisible()
 
     await page.getByTestId('anexo-photo-input').setInputFiles(imageFixture)
     await expect(page.getByTestId('anexos-list')).toBeVisible({ timeout: 30_000 })
 
-    await page.getByTestId('manutencao-data').locator('input').fill('2026-01-15')
-    await page.getByTestId('manutencao-km').locator('input').fill('40000')
-    await page.getByTestId('manutencao-tipo-servico').locator('input').fill('Troca de óleo')
-    await page.getByTestId('manutencao-salvar').click()
+    await fillAndSaveManutencaoMinima(page, {
+      data: '2026-01-15',
+      km: '40000',
+      tipoServico: 'Troca de óleo',
+    })
     await expect(page.getByTestId('manutencoes-list')).toBeVisible()
 
     await page.getByTestId('manutencao-menu-1').click()
@@ -78,10 +81,11 @@ test.describe('anexos', () => {
 
     await page.getByTestId('veiculo-historico-1').click()
     await page.getByTestId('manutencao-empty-cta').click()
-    await page.getByTestId('manutencao-data').locator('input').fill('2026-01-15')
-    await page.getByTestId('manutencao-km').locator('input').fill('40000')
-    await page.getByTestId('manutencao-tipo-servico').locator('input').fill('Troca de óleo')
-    await page.getByTestId('manutencao-salvar').click()
+    await fillAndSaveManutencaoMinima(page, {
+      data: '2026-01-15',
+      km: '40000',
+      tipoServico: 'Troca de óleo',
+    })
     await expect(page.getByTestId('manutencoes-list')).toBeVisible()
 
     await page.getByTestId('manutencao-menu-1').click()

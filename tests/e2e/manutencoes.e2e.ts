@@ -1,5 +1,10 @@
 import { expect, test, type Page } from '@playwright/test'
 import { strings } from '../../src/shared/i18n'
+import {
+  fillManutencaoDados,
+  goToManutencaoPecas,
+  wizardContinuar,
+} from './helpers/manutencaoWizard'
 import { acceptOnboardingCreateCofreAndOpenVeiculos, openTab } from './helpers/onboarding'
 
 async function openManutencaoMenu(page: Page, id: number) {
@@ -42,10 +47,17 @@ test.describe('manutenções', () => {
     await page.getByTestId('manutencao-empty-cta').click()
     await expect(page.getByTestId('manutencao-form')).toBeVisible()
     await expect(page.getByTestId('header-back')).toBeVisible()
+    await expect(page.getByTestId('manutencao-wizard-progress-label')).toContainText('1 de 3')
+    await expect(page.getByTestId('manutencao-veiculo-context')).toContainText('ABC1D23')
 
-    await page.getByTestId('manutencao-data').locator('input').fill('2026-01-15')
-    await page.getByTestId('manutencao-km').locator('input').fill('40000')
-    await page.getByTestId('manutencao-tipo-servico').locator('input').fill('Troca de óleo')
+    await fillManutencaoDados(page, {
+      data: '2026-01-15',
+      km: '40000',
+      tipoServico: 'Troca de óleo',
+      oficina: 'Oficina do Zé',
+      proximaRevisao: '2026-07-15',
+    })
+    await goToManutencaoPecas(page)
 
     await page.getByTestId('manutencao-peca-add').click()
     await page.getByTestId('manutencao-peca-descricao-0').locator('input').fill('Filtro de óleo')
@@ -53,9 +65,7 @@ test.describe('manutenções', () => {
     await page.getByTestId('manutencao-peca-add').click()
     await page.getByTestId('manutencao-peca-descricao-1').locator('input').fill('Óleo 5W30')
     await page.getByTestId('manutencao-peca-valor-1').locator('input').fill('200')
-
-    await page.getByTestId('manutencao-oficina').locator('input').fill('Oficina do Zé')
-    await page.getByTestId('manutencao-proxima-revisao').locator('input').fill('2026-07-15')
+    await expect(page.getByTestId('manutencao-valor')).toContainText('250,50')
     await page.getByTestId('manutencao-salvar').click()
 
     await expect(page.getByTestId('manutencoes-list')).toBeVisible()
@@ -74,11 +84,14 @@ test.describe('manutenções', () => {
     await openManutencaoMenu(page, 1)
     await page.getByTestId('manutencao-edit-1').click()
     await expect(page.getByTestId('manutencao-form')).toBeVisible()
+    await wizardContinuar(page)
+    await expect(page.getByTestId('manutencao-wizard-step-2')).toBeVisible()
     await page
       .getByTestId('manutencao-tipo-servico')
       .locator('input')
       .fill('Troca de óleo e filtro')
     await page.getByTestId('manutencao-km').locator('input').fill('40100')
+    await goToManutencaoPecas(page)
     await page.getByTestId('manutencao-salvar').click()
 
     await expect(page.getByTestId('manutencao-tipo-1')).toHaveText('Troca de óleo e filtro')

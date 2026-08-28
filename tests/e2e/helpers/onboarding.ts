@@ -7,9 +7,15 @@ export type ShellTab = 'veiculos' | 'manutencoes' | 'config'
 /** Aceita o termo no onboarding completo (primeiro uso sem cofre). */
 export async function acceptOnboarding(page: Page): Promise<void> {
   await expect(page.getByTestId('onboarding')).toBeVisible()
+  await page.getByTestId('onboarding-continuar').click()
+  await expect(page.getByTestId('onboarding-step-2')).toBeVisible()
   await expect(page.getByTestId('onboarding-export-hint')).toContainText(
     strings.onboarding.howToExportBody,
   )
+  await page.getByTestId('onboarding-continuar').click()
+  await expect(page.getByTestId('onboarding-step-3')).toBeVisible()
+  // Ionic usa aria-disabled no host (não o disabled nativo do HTMLButton)
+  await expect(page.getByTestId('onboarding-continue')).toHaveAttribute('aria-disabled', 'true')
   await page.getByTestId('onboarding-accept-checkbox').click()
   await page.getByTestId('onboarding-continue').click()
   await expect(page.getByTestId('cofre-create')).toBeVisible()

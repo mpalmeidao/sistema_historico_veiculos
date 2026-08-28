@@ -23,9 +23,11 @@ test.describe('relatório PDF', () => {
     )
 
     await page.getByTestId('manutencao-empty-cta').click()
+    await page.getByTestId('manutencao-continuar').click()
     await page.getByTestId('manutencao-data').locator('input').fill('2026-01-15')
     await page.getByTestId('manutencao-km').locator('input').fill('40000')
     await page.getByTestId('manutencao-tipo-servico').locator('input').fill('Troca de oleo')
+    await page.getByTestId('manutencao-continuar').click()
     await page.getByTestId('manutencao-salvar').click()
     await expect(page.getByTestId('manutencoes-list')).toBeVisible()
 
