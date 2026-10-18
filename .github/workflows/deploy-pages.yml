@@ -40,11 +40,10 @@ jobs:
 
       - name: Deploy to Cloudflare Pages
         if: github.event_name == 'push'
-        uses: cloudflare/pages-action@v1
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: ${{ vars.CLOUDFLARE_PAGES_PROJECT_NAME || 'sistema-historico-veiculos' }}
-          directory: dist
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           # SPA: public/_redirects com /* /index.html 200 é copiado para dist no build
+          command: pages deploy dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT_NAME || 'sistema-historico-veiculos' }}
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}

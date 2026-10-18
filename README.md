@@ -45,13 +45,13 @@ tests/e2e/    # fluxos E2E (`[fluxo].e2e.ts`)
 
 ## Deploy (Cloudflare Pages)
 
-O workflow [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml) roda lint, testes unitários, build e deploy a cada push.
+O workflow [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml) roda lint, testes unitários, build e publica o `dist/` no Cloudflare Pages via `cloudflare/wrangler-action` a cada push. Produção: `https://sistema-historico-veiculos.pages.dev`.
 
 Secrets / variáveis necessários no repositório GitHub:
 
 | Nome                            | Tipo                | Descrição                                                     |
 | ------------------------------- | ------------------- | ------------------------------------------------------------- |
-| `CLOUDFLARE_API_TOKEN`          | secret              | Token da API Cloudflare com permissão de Pages                |
+| `CLOUDFLARE_API_TOKEN`          | secret              | Token da API Cloudflare com permissão Account → Cloudflare Pages → Edit |
 | `CLOUDFLARE_ACCOUNT_ID`         | secret              | Account ID da Cloudflare                                      |
 | `CLOUDFLARE_PAGES_PROJECT_NAME` | variable (opcional) | Nome do projeto Pages (default: `sistema-historico-veiculos`) |
 
