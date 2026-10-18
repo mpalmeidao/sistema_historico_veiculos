@@ -11,7 +11,10 @@ export function BrowserUnsupportedGate() {
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
-        <section className="hvcf-gate hvcf-content-col hvcf-content-col--form" aria-live="assertive">
+        <section
+          className="hvcf-gate hvcf-content-col hvcf-content-col--form"
+          aria-live="assertive"
+        >
           <p className="hvcf-gate__brand">{strings.appName}</p>
           <h1 className="hvcf-gate__title" data-testid="browser-unsupported-title">
             {strings.shell.unsupportedTitle}

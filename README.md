@@ -49,10 +49,10 @@ O workflow [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages
 
 Secrets / variáveis necessários no repositório GitHub:
 
-| Nome                            | Tipo                | Descrição                                                     |
-| ------------------------------- | ------------------- | ------------------------------------------------------------- |
+| Nome                            | Tipo                | Descrição                                                               |
+| ------------------------------- | ------------------- | ----------------------------------------------------------------------- |
 | `CLOUDFLARE_API_TOKEN`          | secret              | Token da API Cloudflare com permissão Account → Cloudflare Pages → Edit |
-| `CLOUDFLARE_ACCOUNT_ID`         | secret              | Account ID da Cloudflare                                      |
-| `CLOUDFLARE_PAGES_PROJECT_NAME` | variable (opcional) | Nome do projeto Pages (default: `sistema-historico-veiculos`) |
+| `CLOUDFLARE_ACCOUNT_ID`         | secret              | Account ID da Cloudflare                                                |
+| `CLOUDFLARE_PAGES_PROJECT_NAME` | variable (opcional) | Nome do projeto Pages (default: `sistema-historico-veiculos`)           |
 
 SPA fallback: `public/_redirects` com `/* /index.html 200`.
