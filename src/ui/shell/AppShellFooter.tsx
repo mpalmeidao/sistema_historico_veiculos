@@ -16,8 +16,10 @@ export interface AppShellFooterProps {
 export function AppShellFooter({ activeTab, onTabChange, showAds, showTabs }: AppShellFooterProps) {
   if (!showAds && !showTabs) return null
 
+  const footerClass = showAds ? 'hvcf-shell-footer--with-ads' : 'hvcf-shell-footer--tabs-only'
+
   return (
-    <IonFooter data-testid="app-shell-footer">
+    <IonFooter data-testid="app-shell-footer" className={footerClass}>
       {showAds ? <AdsBannerPlaceholder /> : null}
       {showTabs ? <AppTabBar activeTab={activeTab} onTabChange={onTabChange} /> : null}
     </IonFooter>

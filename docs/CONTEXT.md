@@ -91,6 +91,7 @@ Estabelecidas:
 - **Onboarding / backup — convenções fixas:**
   - Texto canônico do termo em `src/shared/legal/termoIsencao.ts` (`TERMO_ISENCAO_TEXTO` / `TERMO_ISENCAO_PARAGRAFOS`) — mesma fonte para UI e rodapé do relatório PDF
   - Preferências do app **fora do SQLite**: `localStorage` chave `hvcf.appPrefs.v1` via `src/shared/appPrefs` (`termoAccepted`, `lastBackupAt`, `editsSinceBackup`, `firstUseAt`). Limpar o site apaga prefs e OPFS juntos
+  - **Landing comercial** (`LandingPage`) precede o onboarding completo no primeiro uso (sem cofre e sem termo): CTAs “Experimentar” → `OnboardingFlow` desde a etapa 1; “Já tenho um cofre” → só a etapa do termo → Ajustes para importar. Quem já tem cofre neste aparelho não vê a landing
   - Aceite do termo é pré-requisito para criar/importar cofre no primeiro uso; retorno com cofre existente não repete onboarding completo (só `TermoGate` se prefs ainda sem aceite)
   - Lembrete de backup **não bloqueante**: após **N = 5** edições ou **M = 7** dias sem export confirmado (`BACKUP_REMINDER_EDIT_THRESHOLD` / `BACKUP_REMINDER_DAYS_THRESHOLD`); dispensar adia só na sessão atual (não spam na mesma visita)
 - **Relatório PDF (domínio) — convenções fixas:**
@@ -107,6 +108,7 @@ Estabelecidas:
   - Runtime CacheFirst só para modelo OCR (`hvcf-ocr-model` / `OCR_MODEL_WORKBOX_URL_PATTERN`); **nunca** `.cofre`, `blob:`, OPFS ou PDFs do usuário
   - Aviso de tamanho do modelo permanece no fluxo OCR; falha de cache do modelo não derruba o shell
   - Layout: tabs Veículos / Manutenções / Ajustes (`src/ui/shell`); safe-area no tab bar; banner de ads reservado (`AdsBannerPlaceholder`, 50px) fora de cadastro/onboarding — sem AdSense no MVP
+  - **Chrome desktop (≥992px):** sidebar fixa à esquerda (`AppSidebar`, `DESKTOP_MIN_WIDTH_PX` / `--hvcf-breakpoint-desktop`) no lugar da tab bar quando `showTabs`; ads no rodapé da área de conteúdo (à direita da sidebar). Colunas: listas/home ~780px (`--hvcf-content-max-list` / `.hvcf-content-col--list`); forms/Ajustes/gates/onboarding ~600px (`--hvcf-content-max-form` / `.hvcf-content-col--form`). Viewport &lt;992px mantém tab bar inferior (mobile chrome, tablet incluso)
   - Gestão do cofre (criar/importar/exportar/meta/termo) na aba Ajustes; aba inicial Veículos no uso normal
   - Navegação aninhada (formulário de veículo, histórico, formulário de manutenção): seta de voltar no `IonHeader` (`data-testid="header-back"`), sem React Router
   - Suporte mínimo: `isMinimumBrowserSupported()` (OPFS; mock E2E `__HVCF_MOCK_MINIMUM_BROWSER__`); abaixo disso `BrowserUnsupportedGate`
@@ -117,8 +119,9 @@ Estabelecidas:
       - Formulário de manutenção: wizard de 3 etapas (comprovante → dados → peças) em `ManutencaoForm` + helpers `wizardSteps.ts`; anexos com CTAs Tirar foto / Galeria / PDF; header voltar consciente da etapa via `backHandlerRef`
       - Ajustes: aba “Backup e dados” (`AjustesBackupPanel`) — card do cofre, Exportar prioritário, Criar/Importar e termo
       - Feedback global: `FeedbackToast` (live region) no shell para sucessos/erros; erros de campo permanecem nos forms
-      - Empty states: componente leve `EmptyState` (ícone + título + corpo + CTA opcional) na home, histórico, pick de veículo e anexos
-      - Strings novas da home/backup relativo, histórico, wizard e Ajustes em `src/shared/i18n/pt-BR.ts`
+      - Empty states: componente leve `EmptyState` (ícone + título + corpo + CTA opcional) na home, histórico, pick de veículo e anexos. Sem cofre (termo já aceito), as abas Veículos e Manutenções mostram aviso para criar ou importar o cofre, com CTA para Ajustes — listas e formulários só aparecem com sessão
+      - Landing comercial (`src/ui/landing`): seções hero / para que serve / como funciona / vantagens / grátis / fecho; coluna desktop `--hvcf-content-max-landing` (~720px); sem header do shell
+      - Strings novas da home/backup relativo, histórico, wizard, Ajustes e landing em `src/shared/i18n/pt-BR.ts`
 - Testes: Vitest unitário com arquivo `[nome].test.ts` ao lado do arquivo testado; E2E Playwright como `[fluxo].e2e.ts` em /tests/e2e — /docs/guidelines/testing.md
 - Cobertura de teste é mínima por padrão, mas **obrigatória** em migrações de schema e no parser OCR→formulário, onde um bug corrompe ou perde dados do usuário sem possibilidade de recuperação — sem backend, não há como recuperar
 

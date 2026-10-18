@@ -1112,6 +1112,128 @@
   min-height: 44px;
 }
 
+/* Landing comercial (primeiro uso) */
+.hvcf-landing {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding-bottom: 2rem;
+}
+
+.hvcf-landing__hero {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.hvcf-landing__brand {
+  margin: 0;
+  font-size: var(--hvcf-font-size-eyebrow);
+  font-weight: var(--hvcf-font-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hvcf-color-primary);
+}
+
+.hvcf-landing__title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: var(--hvcf-font-weight-bold);
+  color: var(--hvcf-color-primary);
+  line-height: 1.25;
+  max-width: 20ch;
+}
+
+.hvcf-landing__lead,
+.hvcf-landing__body {
+  margin: 0;
+  font-size: var(--hvcf-font-size-body);
+  color: var(--hvcf-color-text-secondary);
+  line-height: var(--hvcf-line-height-body);
+  max-width: 80ch;
+}
+
+.hvcf-landing__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.hvcf-landing__cta {
+  --border-radius: var(--hvcf-radius-pill);
+  margin: 0;
+  min-height: 48px;
+  font-weight: var(--hvcf-font-weight-semibold);
+}
+
+.hvcf-landing__cta--secondary {
+  min-height: 44px;
+}
+
+.hvcf-landing__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.hvcf-landing__section-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: var(--hvcf-font-weight-bold);
+  color: var(--hvcf-color-text);
+  line-height: 1.3;
+}
+
+.hvcf-landing__step-title {
+  margin: 0 0 0.25rem;
+  font-size: var(--hvcf-font-size-body);
+  font-weight: var(--hvcf-font-weight-semibold);
+  color: var(--hvcf-color-text);
+  line-height: 1.35;
+}
+
+.hvcf-landing__steps,
+.hvcf-landing__benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hvcf-landing__steps li,
+.hvcf-landing__benefits li {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.85rem 1rem;
+  background: var(--hvcf-color-surface);
+  border: 1px solid var(--hvcf-color-border-subtle);
+  border-radius: var(--hvcf-radius-md);
+  box-shadow: var(--hvcf-shadow-card);
+}
+
+.hvcf-landing__steps ion-icon,
+.hvcf-landing__benefits ion-icon {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  font-size: 1.35rem;
+  color: var(--hvcf-color-primary);
+}
+
+.hvcf-landing__section--free {
+  padding: 1rem 1.1rem;
+  background: var(--hvcf-color-chip-bg);
+  border-radius: var(--hvcf-radius-md);
+}
+
+.hvcf-landing__closing {
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--hvcf-color-border-subtle);
+}
+
 /* Onboarding / termo */
 .hvcf-onboarding,
 .hvcf-termo-gate {
@@ -1270,5 +1392,152 @@
 @media (prefers-reduced-motion: no-preference) {
   .hvcf-feedback-toast {
     animation: hvcf-wizard-fade 160ms ease;
+  }
+}
+
+/* ——— Layout desktop (≥992px): colunas, sidebar, chrome ——— */
+
+.hvcf-shell-main-region {
+  outline: none;
+}
+
+.hvcf-shell-main-region:focus-visible {
+  box-shadow: none;
+}
+
+.hvcf-sidebar {
+  display: none;
+}
+
+@media (min-width: 992px) {
+  .hvcf-content-col--list {
+    max-width: var(--hvcf-content-max-list);
+    margin-inline: auto;
+  }
+
+  .hvcf-content-col--form {
+    max-width: var(--hvcf-content-max-form);
+    margin-inline: auto;
+  }
+
+  .hvcf-content-col--landing {
+    max-width: var(--hvcf-content-max-landing);
+    margin-inline: auto;
+  }
+
+  .hvcf-landing__title {
+    font-size: 2rem;
+    max-width: 24ch;
+  }
+
+  .hvcf-landing__actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .hvcf-landing__actions .hvcf-landing__cta {
+    flex: 1 1 12rem;
+  }
+
+  .hvcf-stats-strip {
+    gap: 0.75rem;
+  }
+
+  .hvcf-shell-page--desktop-nav {
+    padding-left: var(--hvcf-sidebar-width);
+  }
+
+  .hvcf-sidebar {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: var(--hvcf-sidebar-width);
+    z-index: 20;
+    box-sizing: border-box;
+    padding: 1.25rem 0.75rem;
+    padding-top: max(1.25rem, env(safe-area-inset-top, 0px));
+    background: var(--hvcf-color-surface);
+    border-right: 1px solid var(--hvcf-color-border-subtle);
+  }
+
+  .hvcf-sidebar__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .hvcf-sidebar__item {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    width: 100%;
+    min-height: 44px;
+    margin: 0;
+    padding: 0.55rem 0.75rem;
+    border: none;
+    border-radius: var(--hvcf-radius-md);
+    background: transparent;
+    color: var(--hvcf-color-text-secondary);
+    font-family: var(--hvcf-font-sans);
+    font-size: var(--hvcf-font-size-body);
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .hvcf-sidebar__item ion-icon {
+    flex-shrink: 0;
+    font-size: 1.25rem;
+  }
+
+  .hvcf-sidebar__item:hover {
+    background: var(--hvcf-color-chip-bg);
+    color: var(--hvcf-color-primary);
+  }
+
+  .hvcf-sidebar__item--active {
+    color: var(--hvcf-color-primary);
+    background: var(--hvcf-color-chip-bg);
+    font-weight: var(--hvcf-font-weight-semibold);
+  }
+
+  .hvcf-sidebar__item--active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 1.25rem;
+    border-radius: 0 2px 2px 0;
+    background: var(--hvcf-color-primary);
+  }
+
+  .hvcf-shell-page--desktop-nav [data-testid='app-tab-bar'] {
+    display: none !important;
+  }
+
+  .hvcf-shell-page--desktop-nav .hvcf-shell-footer--tabs-only {
+    display: none;
+  }
+
+  .hvcf-shell-page--desktop-nav ion-content.ion-padding {
+    --padding-start: var(--hvcf-content-padding-desktop);
+    --padding-end: var(--hvcf-content-padding-desktop);
+    --padding-top: var(--hvcf-content-padding-desktop);
+    --padding-bottom: var(--hvcf-content-padding-desktop);
+  }
+
+  ion-modal[data-testid='termo-modal'] {
+    --width: min(var(--hvcf-content-max-form), 92vw);
+    --max-width: var(--hvcf-content-max-form);
+    --border-radius: var(--hvcf-radius-md);
   }
 }

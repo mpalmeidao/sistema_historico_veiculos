@@ -49,6 +49,14 @@
   /* Foco (≥ 2px, contraste ≥ 3:1) */
   --hvcf-focus-ring: 0 0 0 2px var(--hvcf-color-surface), 0 0 0 4px var(--hvcf-color-primary);
 
+  /* Layout desktop (espelha DESKTOP_MIN_WIDTH_PX em shared/layout/breakpoints.ts) */
+  --hvcf-breakpoint-desktop: 992px;
+  --hvcf-sidebar-width: 220px;
+  --hvcf-content-max-list: 780px;
+  --hvcf-content-max-form: 600px;
+  --hvcf-content-max-landing: 720px;
+  --hvcf-content-padding-desktop: 1.5rem;
+
   /* Integração Ionic (ADR-003) */
   --ion-color-primary: var(--hvcf-color-primary);
   --ion-color-primary-rgb: var(--hvcf-color-primary-rgb);

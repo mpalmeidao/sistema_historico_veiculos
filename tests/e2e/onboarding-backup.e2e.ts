@@ -11,8 +11,11 @@ test.describe('onboarding e backup', () => {
   test('primeiro acesso exige aceite antes de criar cofre', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.getByTestId('onboarding')).toBeVisible()
+    await expect(page.getByTestId('landing')).toBeVisible()
     await expect(page.getByTestId('cofre-create')).toHaveCount(0)
+    await page.getByTestId('landing-cta-experimentar').click()
+
+    await expect(page.getByTestId('onboarding')).toBeVisible()
     await expect(page.getByTestId('onboarding-step-1')).toBeVisible()
 
     await page.getByTestId('onboarding-continuar').click()
@@ -31,6 +34,7 @@ test.describe('onboarding e backup', () => {
     await page.getByTestId('onboarding-continue').click()
 
     await expect(page.getByTestId('onboarding')).toHaveCount(0)
+    await expect(page.getByTestId('landing')).toHaveCount(0)
     await expect(page.getByTestId('cofre-create')).toBeVisible()
     await page.getByTestId('cofre-create').click()
     await expect(page.getByTestId('cofre-meta')).toBeVisible()
@@ -46,6 +50,7 @@ test.describe('onboarding e backup', () => {
     await page.reload()
 
     await openTab(page, 'config')
+    await expect(page.getByTestId('landing')).toHaveCount(0)
     await expect(page.getByTestId('onboarding')).toHaveCount(0)
     await expect(page.getByTestId('cofre-meta')).toBeVisible()
     await expect(page.getByTestId('termo-open')).toBeVisible()
@@ -99,6 +104,7 @@ test.describe('onboarding e backup', () => {
 
   test('onboarding explica gravação automática e dois locais de cópia', async ({ page }) => {
     await page.goto('/')
+    await page.getByTestId('landing-cta-experimentar').click()
     await expect(page.getByTestId('onboarding-step-1')).toBeVisible()
     await page.getByTestId('onboarding-continuar').click()
     await expect(page.getByText(strings.onboarding.autoSaveTitle)).toBeVisible()

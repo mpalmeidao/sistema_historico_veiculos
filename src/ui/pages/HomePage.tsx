@@ -11,7 +11,7 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/react'
-import { carOutline, chevronBack } from 'ionicons/icons'
+import { carOutline, chevronBack, lockClosedOutline } from 'ionicons/icons'
 import { strings } from '../../shared/i18n'
 import { isMinimumBrowserSupported } from '../../shared/browser/isMinimumBrowserSupported'
 import type { Manutencao, Veiculo } from '../../domain'
@@ -26,8 +26,15 @@ import { EmptyState } from '../components/EmptyState'
 import { FeedbackToast } from '../components/FeedbackToast'
 import { ManutencaoForm } from '../manutencoes/ManutencaoForm'
 import { ManutencoesList } from '../manutencoes/ManutencoesList'
+import { LandingPage, resolveLandingIntent, type LandingCta } from '../landing'
 import { BackupReminderBanner, OnboardingFlow, TermoGate, TermoModal } from '../onboarding'
-import { AppShellFooter, BrowserUnsupportedGate, CofreLoadingGate, type AppTabId } from '../shell'
+import {
+  AppShellFooter,
+  AppSidebar,
+  BrowserUnsupportedGate,
+  CofreLoadingGate,
+  type AppTabId,
+} from '../shell'
 import { VeiculoForm } from '../veiculos/VeiculoForm'
 import { VeiculosList } from '../veiculos/VeiculosList'
 
@@ -43,6 +50,9 @@ type View =
   | { kind: 'veiculo-form'; veiculoId: number | null }
   | { kind: 'manutencoes'; veiculoId: number }
   | { kind: 'manutencao-form'; veiculoId: number; manutencaoId: number | null }
+
+/** Fluxo de primeiro uso (sem cofre e sem termo): landing → onboarding ou só termo. */
+type FirstUsePhase = 'landing' | 'onboarding' | 'import-termo'
 
 function tabTitle(tab: AppTabId): string {
   switch (tab) {
@@ -115,6 +125,7 @@ export function HomePage() {
   const [tab, setTab] = useState<AppTabId>('veiculos')
   const [view, setView] = useState<View>({ kind: 'main' })
   const [termoModalOpen, setTermoModalOpen] = useState(false)
+  const [firstUsePhase, setFirstUsePhase] = useState<FirstUsePhase>('landing')
   const manutencoesVeiculoId =
     view.kind === 'manutencoes' || view.kind === 'manutencao-form' ? view.veiculoId : null
 
@@ -156,6 +167,7 @@ export function HomePage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const pendingFileRef = useRef<File | null>(null)
   const manutencaoBackHandlerRef = useRef<(() => boolean) | null>(null)
+  const mainRegionRef = useRef<HTMLDivElement>(null)
   const [replaceAlertOpen, setReplaceAlertOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
@@ -192,7 +204,7 @@ export function HomePage() {
     if (ok) recordBackupConfirmed()
   }
 
-  function handleTabChange(next: AppTabId) {
+  function handleTabChange(next: AppTabId, opts?: { focusMain?: boolean }) {
     setTab(next)
     if (next === 'veiculos' && view.kind === 'manutencao-form') {
       clearPending()
@@ -202,6 +214,16 @@ export function HomePage() {
       if (view.kind === 'manutencao-form') clearPending()
       setView({ kind: 'main' })
     }
+    if (opts?.focusMain) {
+      // Após troca pela sidebar: foco na região principal (não fica preso na nav).
+      queueMicrotask(() => {
+        mainRegionRef.current?.focus()
+      })
+    }
+  }
+
+  function handleSidebarTabChange(next: AppTabId) {
+    handleTabChange(next, { focusMain: true })
   }
 
   function handleAcceptTermo() {
@@ -209,6 +231,24 @@ export function HomePage() {
     if (!session) {
       setTab('config')
     }
+  }
+
+  function handleLandingCta(cta: LandingCta) {
+    const destination = resolveLandingIntent(cta, !!session)
+    if (destination.kind === 'onboarding') {
+      setFirstUsePhase('onboarding')
+      return
+    }
+    if (destination.kind === 'import-termo') {
+      setFirstUsePhase('import-termo')
+      return
+    }
+    setTab('veiculos')
+    setView({ kind: 'main' })
+  }
+
+  function handleExitToLanding() {
+    setFirstUsePhase('landing')
   }
 
   function handleHeaderBack() {
@@ -254,6 +294,9 @@ export function HomePage() {
 
   const showFullOnboarding =
     (status === 'ready' || status === 'error') && !termoAccepted && !session
+  const showLanding = showFullOnboarding && firstUsePhase === 'landing'
+  const showOnboardingFlow =
+    showFullOnboarding && (firstUsePhase === 'onboarding' || firstUsePhase === 'import-termo')
   const showTermoGate = (status === 'ready' || status === 'error') && !termoAccepted && !!session
   const showCofreUi = (status === 'ready' || status === 'error') && termoAccepted
 
@@ -262,9 +305,12 @@ export function HomePage() {
 
   const showAds = showCofreUi && !isCadastroFlow && !showTermoGate
   const showTabs = showCofreUi && !showFullOnboarding && !showTermoGate
-  const showHomeTitle = status === 'loading' || showFullOnboarding || showTermoGate
-  const isVeiculosHome = showCofreUi && tab === 'veiculos' && view.kind === 'main'
-  const showIonHeader = !isVeiculosHome
+  const showHomeTitle = status === 'loading' || showOnboardingFlow || showTermoGate
+  const isVeiculosHome =
+    showCofreUi && status === 'ready' && !!session && tab === 'veiculos' && view.kind === 'main'
+  const showCofreRequired =
+    showCofreUi && status === 'ready' && !session && (tab === 'veiculos' || tab === 'manutencoes')
+  const showIonHeader = !isVeiculosHome && !showLanding
   const backupBannerNode =
     showCofreUi && showBackupReminder && session && !isCadastroFlow ? (
       <BackupReminderBanner
@@ -280,7 +326,10 @@ export function HomePage() {
   }
 
   return (
-    <IonPage>
+    <IonPage
+      className={showTabs ? 'hvcf-shell-page hvcf-shell-page--desktop-nav' : 'hvcf-shell-page'}
+    >
+      {showTabs ? <AppSidebar activeTab={tab} onTabChange={handleSidebarTabChange} /> : null}
       {showIonHeader && (
         <IonHeader>
           <IonToolbar>
@@ -300,215 +349,277 @@ export function HomePage() {
         </IonHeader>
       )}
       <IonContent className="ion-padding">
-        {status === 'loading' && <CofreLoadingGate />}
+        <div
+          ref={mainRegionRef}
+          data-testid="shell-main-region"
+          tabIndex={-1}
+          className="hvcf-shell-main-region"
+        >
+          {status === 'loading' && (
+            <div className="hvcf-content-col hvcf-content-col--form">
+              <CofreLoadingGate />
+            </div>
+          )}
 
-        {status === 'error' && errorMessage && (
-          <IonText color="danger">
-            <p>{errorMessage}</p>
-          </IonText>
-        )}
+          {status === 'error' && errorMessage && (
+            <IonText color="danger">
+              <p>{errorMessage}</p>
+            </IonText>
+          )}
 
-        {showFullOnboarding && <OnboardingFlow onAccept={handleAcceptTermo} />}
+          {showLanding && (
+            <div className="hvcf-content-col hvcf-content-col--landing">
+              <LandingPage onCta={handleLandingCta} />
+            </div>
+          )}
 
-        {showTermoGate && <TermoGate onAccept={handleAcceptTermo} />}
-
-        {backupBannerNode && !isVeiculosHome && backupBannerNode}
-
-        {showCofreUi && (
-          <FeedbackToast
-            message={feedbackError && status === 'ready' ? null : feedbackMessage}
-            variant="success"
-            testId="cofre-message"
-          />
-        )}
-
-        {showCofreUi && status === 'ready' && (
-          <FeedbackToast message={feedbackError} variant="error" testId="cofre-error" />
-        )}
-
-        {showCofreUi && tab === 'config' && (
-          <AjustesBackupPanel
-            session={session}
-            meta={meta}
-            lastBackupAt={prefs.lastBackupAt}
-            fileInputRef={fileInputRef}
-            formatModifiedAt={formatModifiedAt}
-            onCreate={() => {
-              void handleCreateCofre()
-            }}
-            onImportClick={() => fileInputRef.current?.click()}
-            onExport={() => {
-              void handleExport()
-            }}
-            onOpenTermo={() => setTermoModalOpen(true)}
-            onImportChange={(files) => {
-              void handleImportChange(files)
-            }}
-          />
-        )}
-
-        {showCofreUi &&
-          status === 'ready' &&
-          session &&
-          tab === 'veiculos' &&
-          view.kind === 'main' && (
-            <div data-testid="tab-panel-veiculos">
-              <VeiculosList
-                veiculos={veiculos}
-                lastBackupAt={prefs.lastBackupAt}
-                getManutencoesCount={getManutencoesCount}
-                backupBanner={backupBannerNode}
-                onAdd={() => setView({ kind: 'veiculo-form', veiculoId: null })}
-                onEdit={(veiculo) => setView({ kind: 'veiculo-form', veiculoId: veiculo.id })}
-                onOpenHistorico={(veiculo) => {
-                  setView({ kind: 'manutencoes', veiculoId: veiculo.id })
-                  setTab('manutencoes')
-                }}
-                onConfirmDelete={async (veiculo, cascadeConfirmed) => {
-                  await removeVeiculo(veiculo.id, cascadeConfirmed)
-                }}
+          {showOnboardingFlow && (
+            <div className="hvcf-content-col hvcf-content-col--form">
+              <OnboardingFlow
+                key={firstUsePhase}
+                initialStep={firstUsePhase === 'import-termo' ? 3 : 1}
+                onAccept={handleAcceptTermo}
+                onExit={handleExitToLanding}
               />
             </div>
           )}
 
-        {showCofreUi &&
-          status === 'ready' &&
-          session &&
-          tab === 'veiculos' &&
-          view.kind === 'veiculo-form' && (
-            <div data-testid="tab-panel-veiculos-form">
-              <VeiculoForm
-                initial={editingVeiculo}
-                submitting={submitting}
-                onCancel={() => setView({ kind: 'main' })}
-                onSubmit={async (raw) => {
-                  setSubmitting(true)
-                  try {
-                    const result = await saveVeiculo(raw, view.veiculoId)
-                    if (result.ok === true) {
-                      setView({ kind: 'main' })
-                    }
-                    return result
-                  } finally {
-                    setSubmitting(false)
-                  }
-                }}
-              />
+          {showTermoGate && (
+            <div className="hvcf-content-col hvcf-content-col--form">
+              <TermoGate onAccept={handleAcceptTermo} />
             </div>
           )}
 
-        {showCofreUi && status === 'ready' && session && tab === 'manutencoes' && (
-          <div data-testid="tab-panel-manutencoes">
-            {view.kind === 'manutencoes' && detalheVeiculo ? (
-              <ManutencoesList
-                veiculo={detalheVeiculo}
-                manutencoes={manutencoes}
-                onAdd={() =>
-                  setView({
-                    kind: 'manutencao-form',
-                    veiculoId: view.veiculoId,
-                    manutencaoId: null,
-                  })
-                }
-                onEdit={(manutencao) =>
-                  setView({
-                    kind: 'manutencao-form',
-                    veiculoId: view.veiculoId,
-                    manutencaoId: manutencao.id,
-                  })
-                }
-                onConfirmDelete={async (manutencao) => {
-                  await removeManutencao(manutencao.id)
-                }}
-                onGenerateRelatorio={() => {
-                  void gerarRelatorio(view.veiculoId)
-                }}
-                relatorioWorking={relatorioStatus === 'working'}
-                relatorioMessage={relatorioMessage}
-                relatorioError={relatorioError}
-              />
-            ) : view.kind === 'manutencao-form' ? (
-              <ManutencaoForm
-                veiculoId={view.veiculoId}
-                veiculoPlaca={detalheVeiculo?.placa}
-                veiculoMarcaModelo={detalheVeiculo?.marcaModelo}
-                initial={editingManutencao}
-                submitting={submitting}
-                anexos={anexos}
-                anexosProcessing={anexosProcessing}
-                anexosError={anexosError}
-                attachFile={attachFile}
-                confirmPreparedAnexo={confirmPreparedAnexo}
-                loadAnexoBytes={loadAnexoBytes}
-                removeAnexo={removeAnexo}
-                backHandlerRef={manutencaoBackHandlerRef}
-                onCancel={() => {
-                  clearPending()
-                  setView({ kind: 'manutencoes', veiculoId: view.veiculoId })
-                }}
-                onSubmit={async (raw) => {
-                  setSubmitting(true)
-                  try {
-                    const result = await saveManutencao(raw, view.manutencaoId)
-                    if (result.ok === true) {
-                      if (view.manutencaoId === null) {
-                        const flushed = await flushPending(result.id)
-                        if (!flushed) {
-                          setView({
-                            kind: 'manutencao-form',
-                            veiculoId: view.veiculoId,
-                            manutencaoId: result.id,
-                          })
-                          return result
-                        }
-                      }
-                      clearPending()
-                      setView({ kind: 'manutencoes', veiculoId: view.veiculoId })
-                    }
-                    return result
-                  } finally {
-                    setSubmitting(false)
-                  }
-                }}
-              />
-            ) : (
+          {backupBannerNode && !isVeiculosHome && backupBannerNode}
+
+          {showCofreUi && (
+            <FeedbackToast
+              message={feedbackError && status === 'ready' ? null : feedbackMessage}
+              variant="success"
+              testId="cofre-message"
+            />
+          )}
+
+          {showCofreUi && status === 'ready' && (
+            <FeedbackToast message={feedbackError} variant="error" testId="cofre-error" />
+          )}
+
+          {showCofreRequired && (
+            <div
+              data-testid={tab === 'veiculos' ? 'tab-panel-veiculos' : 'tab-panel-manutencoes'}
+              className="hvcf-content-col hvcf-content-col--list"
+            >
               <EmptyState
-                icon={carOutline}
-                title={strings.shell.manutencoesPickVeiculoTitle}
-                body={strings.shell.manutencoesPickVeiculo}
-                testId="manutencoes-pick-veiculo"
-                actionLabel={strings.shell.manutencoesPickVeiculoCta}
-                actionTestId="manutencoes-pick-veiculos-cta"
-                onAction={() => setTab('veiculos')}
+                icon={lockClosedOutline}
+                title={strings.cofre.requiredTitle}
+                body={strings.cofre.requiredBody}
+                testId="cofre-required"
+                actionLabel={strings.cofre.requiredCta}
+                actionTestId="cofre-required-cta"
+                onAction={() => handleTabChange('config', { focusMain: true })}
               />
+            </div>
+          )}
+
+          {showCofreUi && tab === 'config' && (
+            <div className="hvcf-content-col hvcf-content-col--form">
+              <AjustesBackupPanel
+                session={session}
+                meta={meta}
+                lastBackupAt={prefs.lastBackupAt}
+                fileInputRef={fileInputRef}
+                formatModifiedAt={formatModifiedAt}
+                onCreate={() => {
+                  void handleCreateCofre()
+                }}
+                onImportClick={() => fileInputRef.current?.click()}
+                onExport={() => {
+                  void handleExport()
+                }}
+                onOpenTermo={() => setTermoModalOpen(true)}
+                onImportChange={(files) => {
+                  void handleImportChange(files)
+                }}
+              />
+            </div>
+          )}
+
+          {showCofreUi &&
+            status === 'ready' &&
+            session &&
+            tab === 'veiculos' &&
+            view.kind === 'main' && (
+              <div
+                data-testid="tab-panel-veiculos"
+                className="hvcf-content-col hvcf-content-col--list"
+              >
+                <VeiculosList
+                  veiculos={veiculos}
+                  lastBackupAt={prefs.lastBackupAt}
+                  getManutencoesCount={getManutencoesCount}
+                  backupBanner={backupBannerNode}
+                  onAdd={() => setView({ kind: 'veiculo-form', veiculoId: null })}
+                  onEdit={(veiculo) => setView({ kind: 'veiculo-form', veiculoId: veiculo.id })}
+                  onOpenHistorico={(veiculo) => {
+                    setView({ kind: 'manutencoes', veiculoId: veiculo.id })
+                    setTab('manutencoes')
+                  }}
+                  onConfirmDelete={async (veiculo, cascadeConfirmed) => {
+                    await removeVeiculo(veiculo.id, cascadeConfirmed)
+                  }}
+                />
+              </div>
             )}
-          </div>
-        )}
 
-        <TermoModal isOpen={termoModalOpen} onClose={() => setTermoModalOpen(false)} />
+          {showCofreUi &&
+            status === 'ready' &&
+            session &&
+            tab === 'veiculos' &&
+            view.kind === 'veiculo-form' && (
+              <div
+                data-testid="tab-panel-veiculos-form"
+                className="hvcf-content-col hvcf-content-col--form"
+              >
+                <VeiculoForm
+                  initial={editingVeiculo}
+                  submitting={submitting}
+                  onCancel={() => setView({ kind: 'main' })}
+                  onSubmit={async (raw) => {
+                    setSubmitting(true)
+                    try {
+                      const result = await saveVeiculo(raw, view.veiculoId)
+                      if (result.ok === true) {
+                        setView({ kind: 'main' })
+                      }
+                      return result
+                    } finally {
+                      setSubmitting(false)
+                    }
+                  }}
+                />
+              </div>
+            )}
 
-        <IonAlert
-          isOpen={replaceAlertOpen}
-          header={strings.cofre.replaceTitle}
-          message={strings.cofre.replaceMessage}
-          buttons={[
-            {
-              text: strings.cofre.replaceCancel,
-              role: 'cancel',
-              handler: () => {
-                pendingFileRef.current = null
+          {showCofreUi && status === 'ready' && session && tab === 'manutencoes' && (
+            <div
+              data-testid="tab-panel-manutencoes"
+              className={
+                view.kind === 'manutencao-form'
+                  ? 'hvcf-content-col hvcf-content-col--form'
+                  : 'hvcf-content-col hvcf-content-col--list'
+              }
+            >
+              {view.kind === 'manutencoes' && detalheVeiculo ? (
+                <ManutencoesList
+                  veiculo={detalheVeiculo}
+                  manutencoes={manutencoes}
+                  onAdd={() =>
+                    setView({
+                      kind: 'manutencao-form',
+                      veiculoId: view.veiculoId,
+                      manutencaoId: null,
+                    })
+                  }
+                  onEdit={(manutencao) =>
+                    setView({
+                      kind: 'manutencao-form',
+                      veiculoId: view.veiculoId,
+                      manutencaoId: manutencao.id,
+                    })
+                  }
+                  onConfirmDelete={async (manutencao) => {
+                    await removeManutencao(manutencao.id)
+                  }}
+                  onGenerateRelatorio={() => {
+                    void gerarRelatorio(view.veiculoId)
+                  }}
+                  relatorioWorking={relatorioStatus === 'working'}
+                  relatorioMessage={relatorioMessage}
+                  relatorioError={relatorioError}
+                />
+              ) : view.kind === 'manutencao-form' ? (
+                <ManutencaoForm
+                  veiculoId={view.veiculoId}
+                  veiculoPlaca={detalheVeiculo?.placa}
+                  veiculoMarcaModelo={detalheVeiculo?.marcaModelo}
+                  initial={editingManutencao}
+                  submitting={submitting}
+                  anexos={anexos}
+                  anexosProcessing={anexosProcessing}
+                  anexosError={anexosError}
+                  attachFile={attachFile}
+                  confirmPreparedAnexo={confirmPreparedAnexo}
+                  loadAnexoBytes={loadAnexoBytes}
+                  removeAnexo={removeAnexo}
+                  backHandlerRef={manutencaoBackHandlerRef}
+                  onCancel={() => {
+                    clearPending()
+                    setView({ kind: 'manutencoes', veiculoId: view.veiculoId })
+                  }}
+                  onSubmit={async (raw) => {
+                    setSubmitting(true)
+                    try {
+                      const result = await saveManutencao(raw, view.manutencaoId)
+                      if (result.ok === true) {
+                        if (view.manutencaoId === null) {
+                          const flushed = await flushPending(result.id)
+                          if (!flushed) {
+                            setView({
+                              kind: 'manutencao-form',
+                              veiculoId: view.veiculoId,
+                              manutencaoId: result.id,
+                            })
+                            return result
+                          }
+                        }
+                        clearPending()
+                        setView({ kind: 'manutencoes', veiculoId: view.veiculoId })
+                      }
+                      return result
+                    } finally {
+                      setSubmitting(false)
+                    }
+                  }}
+                />
+              ) : (
+                <EmptyState
+                  icon={carOutline}
+                  title={strings.shell.manutencoesPickVeiculoTitle}
+                  body={strings.shell.manutencoesPickVeiculo}
+                  testId="manutencoes-pick-veiculo"
+                  actionLabel={strings.shell.manutencoesPickVeiculoCta}
+                  actionTestId="manutencoes-pick-veiculos-cta"
+                  onAction={() => setTab('veiculos')}
+                />
+              )}
+            </div>
+          )}
+
+          <TermoModal isOpen={termoModalOpen} onClose={() => setTermoModalOpen(false)} />
+
+          <IonAlert
+            isOpen={replaceAlertOpen}
+            header={strings.cofre.replaceTitle}
+            message={strings.cofre.replaceMessage}
+            buttons={[
+              {
+                text: strings.cofre.replaceCancel,
+                role: 'cancel',
+                handler: () => {
+                  pendingFileRef.current = null
+                },
               },
-            },
-            {
-              text: strings.cofre.replaceConfirm,
-              role: 'confirm',
-              handler: () => {
-                void confirmReplace()
+              {
+                text: strings.cofre.replaceConfirm,
+                role: 'confirm',
+                handler: () => {
+                  void confirmReplace()
+                },
               },
-            },
-          ]}
-          onDidDismiss={() => setReplaceAlertOpen(false)}
-        />
+            ]}
+            onDidDismiss={() => setReplaceAlertOpen(false)}
+          />
+        </div>
       </IonContent>
 
       <AppShellFooter

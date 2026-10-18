@@ -4,9 +4,16 @@ import { strings } from '../../../src/shared/i18n'
 
 export type ShellTab = 'veiculos' | 'manutencoes' | 'config'
 
+/** Na landing de primeiro uso, segue o CTA Experimentar. */
+export async function startOnboardingFromLanding(page: Page): Promise<void> {
+  await expect(page.getByTestId('landing')).toBeVisible()
+  await page.getByTestId('landing-cta-experimentar').click()
+  await expect(page.getByTestId('onboarding')).toBeVisible()
+}
+
 /** Aceita o termo no onboarding completo (primeiro uso sem cofre). */
 export async function acceptOnboarding(page: Page): Promise<void> {
-  await expect(page.getByTestId('onboarding')).toBeVisible()
+  await startOnboardingFromLanding(page)
   await page.getByTestId('onboarding-continuar').click()
   await expect(page.getByTestId('onboarding-step-2')).toBeVisible()
   await expect(page.getByTestId('onboarding-export-hint')).toContainText(
@@ -22,6 +29,19 @@ export async function acceptOnboarding(page: Page): Promise<void> {
 }
 
 export async function openTab(page: Page, tab: ShellTab): Promise<void> {
+  const sidebar = page.getByTestId('app-sidebar')
+  const tabBar = page.getByTestId('app-tab-bar')
+  // Após reload, ambos podem existir no DOM; esperar o que estiver de fato visível
+  await expect
+    .poll(async () => (await sidebar.isVisible()) || (await tabBar.isVisible()))
+    .toBe(true)
+
+  if (await sidebar.isVisible()) {
+    await page.getByTestId(`sidebar-${tab}`).click()
+    await expect(page.getByTestId(`sidebar-${tab}`)).toHaveAttribute('aria-current', 'page')
+    return
+  }
+
   await page.getByTestId(`tab-${tab}`).click()
   await expect(page.getByTestId(`tab-${tab}`)).toHaveClass(/tab-selected/)
 }

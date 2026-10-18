@@ -13,6 +13,10 @@ import { strings } from '../../shared/i18n'
 
 export interface OnboardingFlowProps {
   onAccept: () => void
+  /** Voltar à landing (etapa 1 do fluxo completo, ou etapa 3 no caminho só-termo). */
+  onExit?: () => void
+  /** Etapa inicial: 1 = onboarding completo; 3 = só termo (Já tenho um cofre). */
+  initialStep?: OnboardingStep
 }
 
 type OnboardingStep = 1 | 2 | 3
@@ -23,14 +27,27 @@ function progressLabel(step: OnboardingStep): string {
     .replace('{{total}}', '3')
 }
 
-export function OnboardingFlow({ onAccept }: OnboardingFlowProps) {
-  const [step, setStep] = useState<OnboardingStep>(1)
+export function OnboardingFlow({ onAccept, onExit, initialStep = 1 }: OnboardingFlowProps) {
+  const [step, setStep] = useState<OnboardingStep>(initialStep)
   const [accepted, setAccepted] = useState(false)
   const titleRef = useRef<HTMLHeadingElement>(null)
+  const enteredAtTermoOnly = initialStep === 3
 
   useEffect(() => {
     titleRef.current?.focus()
   }, [step])
+
+  function handleBackFromStep1() {
+    onExit?.()
+  }
+
+  function handleBackFromStep3() {
+    if (enteredAtTermoOnly) {
+      onExit?.()
+      return
+    }
+    setStep(2)
+  }
 
   return (
     <section
@@ -81,14 +98,27 @@ export function OnboardingFlow({ onAccept }: OnboardingFlowProps) {
               <span>{strings.onboarding.flowManutencao}</span>
             </li>
           </ol>
-          <IonButton
-            data-testid="onboarding-continuar"
-            className="hvcf-wizard__cta"
-            expand="block"
-            onClick={() => setStep(2)}
-          >
-            {strings.onboarding.continueStep}
-          </IonButton>
+          <div className="hvcf-wizard__actions">
+            <IonButton
+              data-testid="onboarding-continuar"
+              className="hvcf-wizard__cta"
+              expand="block"
+              onClick={() => setStep(2)}
+            >
+              {strings.onboarding.continueStep}
+            </IonButton>
+            {onExit ? (
+              <IonButton
+                data-testid="onboarding-voltar"
+                className="hvcf-wizard__cta--secondary"
+                fill="outline"
+                expand="block"
+                onClick={handleBackFromStep1}
+              >
+                {strings.shell.back}
+              </IonButton>
+            ) : null}
+          </div>
         </div>
       )}
 
@@ -187,7 +217,7 @@ export function OnboardingFlow({ onAccept }: OnboardingFlowProps) {
               className="hvcf-wizard__cta--secondary"
               fill="outline"
               expand="block"
-              onClick={() => setStep(2)}
+              onClick={handleBackFromStep3}
             >
               {strings.shell.back}
             </IonButton>
